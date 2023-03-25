@@ -1,7 +1,7 @@
 use crate::config::CONFIG;
 use crate::data::GuiFlags;
 use crate::{app, version};
-use iced::widget::{Button, Column, Container, ProgressBar, Row, Text, TextInput};
+use iced::widget::{Button, Column, Container, ProgressBar, Row, Scrollable, Text, TextInput};
 use iced::window::Icon;
 use iced::{theme, window, Application, Command, Element, Padding, Renderer, Settings};
 use iced_aw::menu::{MenuBar, MenuTree};
@@ -145,6 +145,7 @@ impl Application for Gui {
             let text = Text::new(info);
             info_container = info_container.push(text);
         }
+        let info_scroll = Scrollable::new(info_container);
 
         let opt_container = Column::new()
             .push(modal_about)
@@ -152,7 +153,7 @@ impl Application for Gui {
             .push(dir_container)
             .push(update_btn)
             .push(progress_bar)
-            .push(info_container)
+            .push(info_scroll)
             .spacing(DEFAULT_SPACING);
 
         let mc = Row::new().push(opt_container);
