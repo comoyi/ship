@@ -3,16 +3,24 @@ use crate::error::Error;
 use log::debug;
 
 pub fn start(id: String, servers: &Vec<Server>) {
-    let server_o = get_server_by_id(id, servers);
+    debug!("update, id: {}", id);
+    let server_o = get_server_by_id(id.to_string(), servers);
     let server;
     match server_o {
         None => {
+            debug!("server not found, id: {}", id);
             return;
         }
         Some(s) => {
             server = s;
         }
     }
+    let j = serde_json::to_string(&server);
+    debug!(
+        "found server, id: {}, server: {:?}",
+        id,
+        j.unwrap_or("".to_string())
+    );
     let sfi = get_server_file_info(&server);
     if let Err(_) = sfi {
         return;
