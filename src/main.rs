@@ -1,6 +1,7 @@
 use crate::config::CONFIG;
 
 mod app;
+mod cache;
 mod config;
 mod data;
 mod download;

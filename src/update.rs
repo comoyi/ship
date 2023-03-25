@@ -1,6 +1,7 @@
-use crate::data::{Server, ServerFileInfo};
+use crate::data::{ClientFileInfo, FileInfo, Server, ServerFileInfo};
 use crate::error::Error;
 use log::debug;
+use std::path::Path;
 
 pub fn start(id: String, servers: &Vec<Server>) {
     debug!("update, id: {}", id);
@@ -15,16 +16,38 @@ pub fn start(id: String, servers: &Vec<Server>) {
             server = s;
         }
     }
-    let j = serde_json::to_string(&server);
-    debug!(
-        "found server, id: {}, server: {:?}",
-        id,
-        j.unwrap_or("".to_string())
-    );
-    let sfi = get_server_file_info(&server);
-    if let Err(_) = sfi {
-        return;
+    let j_r = serde_json::to_string(&server);
+    let j = j_r.unwrap_or("".to_string());
+    debug!("found server, id: {}, server: {:?}", id, j);
+    let sfi;
+    let sfi_r = get_server_file_info(&server);
+    match sfi_r {
+        Ok(v) => {
+            sfi = v;
+        }
+        Err(_) => {
+            debug!("get_server_file_info failed, server: {}", j);
+            return;
+        }
     }
+
+    let cfi;
+    let cfi_r = get_client_file_info(&server);
+    match cfi_r {
+        Ok(v) => {
+            cfi = v;
+        }
+        Err(_) => {
+            debug!("get_client_file_info failed, server: {}", j);
+            return;
+        }
+    }
+
+    let (changed_files, add_files, del_files) = diff_server_client(&sfi, &cfi);
+    debug!(
+        "sfi: {:?},cfi: {:?}, changed_files: {:?}, add_files: {:?}, del_files: {:?}",
+        sfi, cfi, changed_files, add_files, del_files
+    );
 }
 
 fn get_server_file_info(s: &Server) -> Result<ServerFileInfo, Error> {
@@ -37,13 +60,22 @@ fn get_server_file_info(s: &Server) -> Result<ServerFileInfo, Error> {
             match sfi_r {
                 Ok(sfi) => {
                     debug!("{}", serde_json::to_string(&sfi).unwrap());
-                    Ok(sfi)
+                    return Ok(sfi);
                 }
-                Err(_) => Err(Error::DeserializeServerFileInfoError),
+                Err(_) => {
+                    return Err(Error::DeserializeServerFileInfoError);
+                }
             }
         }
-        Err(_) => Err(Error::GetServerFileInfoError),
+        Err(_) => {
+            return Err(Error::GetServerFileInfoError);
+        }
     }
+}
+
+fn get_client_file_info(s: &Server) -> Result<ClientFileInfo, Error> {
+    Ok(ClientFileInfo::default())
+    // Err(Error::GetClientFileInfoError)
 }
 
 pub fn get_full_url(u: &str, s: &Server) -> String {
@@ -59,4 +91,53 @@ fn get_server_by_id(id: String, servers: &Vec<Server>) -> Option<&Server> {
         }
     }
     server
+}
+
+fn diff_server_client(
+    sfi: &ServerFileInfo,
+    cfi: &ClientFileInfo,
+) -> (Vec<FileInfo>, Vec<FileInfo>, Vec<FileInfo>) {
+    let mut del_files: Vec<FileInfo> = vec![];
+    let mut add_files: Vec<FileInfo> = vec![];
+    let mut changed_files: Vec<FileInfo> = vec![];
+
+    for cf in &cfi.files {
+        if !is_in(cf, &sfi.files) {
+            del_files.push(cf.clone());
+        }
+    }
+    for sf in &sfi.files {
+        if !is_in(sf, &cfi.files) {
+            add_files.push(sf.clone());
+        }
+    }
+    for sf in &sfi.files {
+        let sf_path = Path::new(&sf.relative_path);
+        for cf in &cfi.files {
+            let cf_path = Path::new(&cf.relative_path);
+            if cf_path.eq(sf_path) {
+                if cf.size != sf.size || cf.hash != sf.hash {
+                    changed_files.push(sf.clone());
+                }
+            }
+            break;
+        }
+    }
+    (changed_files, add_files, del_files)
+}
+
+fn is_in(f: &FileInfo, fs: &Vec<FileInfo>) -> bool {
+    let f_path = Path::new(&f.relative_path);
+    let mut flag = false;
+    for x in fs {
+        let x_path = Path::new(&x.relative_path);
+        if x_path.eq(f_path) {
+            flag = true;
+            break;
+        }
+    }
+    if flag {
+        return true;
+    }
+    false
 }

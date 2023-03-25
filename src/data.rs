@@ -1,6 +1,7 @@
 use crate::info::InfoManager;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
@@ -57,7 +58,7 @@ pub struct Server {
     pub update_progress: UpdateProgress,
 }
 
-#[derive(Serialize_repr, Deserialize_repr)]
+#[derive(Serialize_repr, Deserialize_repr, Debug)]
 #[repr(i8)]
 pub enum ScanStatus {
     Wait = 10,
@@ -66,7 +67,7 @@ pub enum ScanStatus {
     Completed = 40,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ServerFileInfo {
     #[serde(rename = "status")]
     pub scan_status: ScanStatus,
@@ -76,7 +77,7 @@ pub struct ServerFileInfo {
 
 impl Default for ServerFileInfo {
     fn default() -> Self {
-        ServerFileInfo {
+        Self {
             scan_status: ScanStatus::Wait,
             last_scan_finish_time: 0,
             files: vec![],
@@ -84,7 +85,25 @@ impl Default for ServerFileInfo {
     }
 }
 
-#[derive(Serialize_repr, Deserialize_repr)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ClientFileInfo {
+    #[serde(rename = "status")]
+    pub scan_status: ScanStatus,
+    pub last_scan_finish_time: i64,
+    pub files: Vec<FileInfo>,
+}
+
+impl Default for ClientFileInfo {
+    fn default() -> Self {
+        Self {
+            scan_status: ScanStatus::Wait,
+            last_scan_finish_time: 0,
+            files: vec![],
+        }
+    }
+}
+
+#[derive(Serialize_repr, Deserialize_repr, Debug, Clone)]
 #[repr(i8)]
 pub enum FileType {
     Unknown = 0,
@@ -93,7 +112,7 @@ pub enum FileType {
     Symlink = 4,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileInfo {
     pub relative_path: String,
     #[serde(rename = "type")]
@@ -112,3 +131,11 @@ pub struct FileInfo {
 //         }
 //     }
 // }
+
+struct Cache {
+    chunks: HashMap<String, CacheFile>,
+}
+
+struct CacheFile {
+    pub hash: String,
+}
