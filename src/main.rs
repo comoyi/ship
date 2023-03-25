@@ -3,7 +3,9 @@ use crate::config::CONFIG;
 mod app;
 mod config;
 mod data;
+mod downloader;
 mod gui;
+mod info;
 mod log;
 mod version;
 
