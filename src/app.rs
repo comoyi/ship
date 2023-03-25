@@ -1,6 +1,6 @@
 use crate::config::CONFIG;
 use crate::data::{AppData, GuiFlags, Server};
-use crate::downloader::Downloader;
+use crate::download::Downloader;
 use crate::info::InfoManager;
 use crate::{gui, util};
 use log::info;
