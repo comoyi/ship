@@ -52,6 +52,7 @@ pub struct Server {
     pub port: u16,
     pub dir: String,
     pub file_info: Option<ServerFileInfo>,
+    pub selected: bool,
 }
 
 #[derive(Serialize_repr, Deserialize_repr)]

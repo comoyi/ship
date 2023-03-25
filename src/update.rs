@@ -1,17 +1,26 @@
-use crate::config::CONFIG;
-use crate::data::ServerFileInfo;
+use crate::data::{Server, ServerFileInfo};
 use crate::error::Error;
 use log::debug;
 
 pub fn start() {
-    let sfi = get_server_file_info();
+    let s = Server {
+        name: "".to_string(),
+        protocol: "".to_string(),
+        host: "".to_string(),
+        port: 0,
+        dir: "".to_string(),
+        file_info: None,
+        selected: false,
+    };
+    let sfi = get_server_file_info(&s);
     if let Err(_) = sfi {
         return;
     }
 }
 
-fn get_server_file_info() -> Result<ServerFileInfo, Error> {
-    let url = get_full_url("/files");
+fn get_server_file_info(s: &Server) -> Result<ServerFileInfo, Error> {
+    let url = get_full_url("/files", s);
+    debug!("url: {}", url);
     let resp_r = reqwest::blocking::get(url);
     match resp_r {
         Ok(resp) => {
@@ -28,6 +37,6 @@ fn get_server_file_info() -> Result<ServerFileInfo, Error> {
     }
 }
 
-pub fn get_full_url(u: &str) -> String {
-    format!("{}://{}:{}{}", CONFIG.protocol, CONFIG.host, CONFIG.port, u)
+pub fn get_full_url(u: &str, s: &Server) -> String {
+    format!("{}://{}:{}{}", s.protocol, s.host, s.port, u)
 }

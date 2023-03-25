@@ -1,9 +1,7 @@
 use crate::config::CONFIG;
-use crate::data::{GuiFlags, Server};
+use crate::data::GuiFlags;
 use crate::{app, update, version};
-use iced::widget::{
-    Button, Column, Container, ProgressBar, Radio, Row, Scrollable, Text, TextInput,
-};
+use iced::widget::{Button, Column, Container, ProgressBar, Row, Scrollable, Text, TextInput};
 use iced::window::Icon;
 use iced::{theme, window, Application, Command, Element, Padding, Renderer, Settings};
 use iced_aw::menu::{MenuBar, MenuTree};
@@ -206,7 +204,7 @@ impl Gui {
         let end = d_guard.update_progress.total;
         let value = d_guard.update_progress.value;
         drop(d_guard);
-        let progress_bar = ProgressBar::new(start..=end, value);
+        let progress_bar = ProgressBar::new(start..=end, value).width(100);
         progress_bar
     }
 
@@ -221,7 +219,10 @@ impl Gui {
         let mut server_container = Column::new().spacing(2);
         for s in &d_guard.servers {
             let server_text = Text::new(s.name.to_string());
-            let server = Button::new(server_text).on_press(Message::SelectServer);
+            let mut server = Button::new(server_text).on_press(Message::SelectServer);
+            if s.selected {
+                server = server.style(theme::Button::Positive);
+            }
             server_container = server_container.push(server);
         }
         drop(d_guard);

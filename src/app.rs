@@ -25,6 +25,7 @@ pub fn start() {
             port: s.port,
             dir: s.dir.to_string(),
             file_info: None,
+            selected: s.selected,
         };
         ss.push(server);
     }
