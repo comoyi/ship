@@ -1,5 +1,5 @@
 use crate::config::CONFIG;
-use crate::data::GuiFlags;
+use crate::data::{GuiFlags, Server};
 use crate::{app, update, version};
 use iced::widget::{Button, Column, Container, ProgressBar, Row, Scrollable, Text, TextInput};
 use iced::window::Icon;
@@ -7,7 +7,7 @@ use iced::{theme, window, Application, Command, Element, Padding, Renderer, Sett
 use iced_aw::menu::{MenuBar, MenuTree};
 use iced_aw::{menu, Card, Modal};
 use image::ImageFormat;
-use log::info;
+use log::{debug, info};
 use std::process::exit;
 
 const DEFAULT_PADDING: Padding = Padding::new(10.0);
@@ -41,8 +41,8 @@ struct Gui {
 
 #[derive(Debug, Clone)]
 enum Message {
-    SelectServer,
-    Update,
+    SelectServer { id: String },
+    Update { id: String },
 
     Exit,
     OpenModal,
@@ -77,18 +77,19 @@ impl Application for Gui {
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
-            Message::SelectServer => {}
-            Message::Update => {
-                let d_guard = self.flags.data.lock().unwrap();
-                let dir = d_guard.dir.clone();
+            Message::SelectServer { id } => {
+                debug!("select, id:{}", id);
+                let mut d_guard = self.flags.data.lock().unwrap();
+                select_server(id, &mut d_guard.servers);
                 drop(d_guard);
-                if dir == "" {
-                } else {
-                    let im_guard = self.flags.info_manager.lock().unwrap();
-                    im_guard.add("开始更新");
-                    drop(im_guard);
-                    update::start();
-                }
+            }
+            Message::Update { id } => {
+                let im_guard = self.flags.info_manager.lock().unwrap();
+                im_guard.add(&format!("开始更新{}", id));
+                drop(im_guard);
+                let d_guard = self.flags.data.lock().unwrap();
+                update::start(id, &d_guard.servers);
+                drop(d_guard);
             }
             Message::Exit => {
                 exit(0);
@@ -122,7 +123,13 @@ impl Application for Gui {
         .on_esc(Message::CloseModal);
 
         let d_guard = self.flags.data.lock().unwrap();
-        let dir = d_guard.dir.clone();
+        let mut dir = "".to_string();
+        for s in &d_guard.servers {
+            if s.selected {
+                dir = s.dir.to_string();
+                break;
+            }
+        }
         drop(d_guard);
         let label_width = 60;
         let dir_label = Text::new("文件夹").width(label_width);
@@ -134,7 +141,7 @@ impl Application for Gui {
             .push(dir_input)
             .width(calc_dir_input_width(&dir));
 
-        let update_btn = Button::new("更新MOD").on_press(Message::Update);
+        let update_btn = Button::new("更新MOD").on_press(Message::Update { id: "".to_string() });
 
         let progress_bar = self.make_progress_bar();
 
@@ -156,12 +163,18 @@ impl Application for Gui {
             .push(dir_container)
             .push(update_btn)
             .push(progress_bar)
+            .spacing(DEFAULT_SPACING);
+        let info_container = Column::new()
+            .height(160)
             .push(info_scroll)
             .spacing(DEFAULT_SPACING);
 
         let server_container = self.make_server_panel();
 
-        let mc = Column::new().push(opt_container).push(server_container);
+        let mc = Column::new()
+            .push(opt_container)
+            .push(server_container)
+            .push(info_container);
 
         let c = Container::new(mc).padding(DEFAULT_PADDING);
 
@@ -219,11 +232,29 @@ impl Gui {
         let mut server_container = Column::new().spacing(2);
         for s in &d_guard.servers {
             let server_text = Text::new(s.name.to_string());
-            let mut server = Button::new(server_text).on_press(Message::SelectServer);
+            let mut server = Button::new(server_text).on_press(Message::SelectServer {
+                id: s.id.to_string(),
+            });
             if s.selected {
                 server = server.style(theme::Button::Positive);
             }
-            server_container = server_container.push(server);
+            let label_width = 60;
+            let dir_label = Text::new("文件夹").width(label_width);
+            let dir_input: TextInput<Message> = TextInput::new("", &s.dir, |_s| -> Message {
+                return Message::Noop;
+            });
+            let dir_container = Row::new()
+                .push(dir_label)
+                .push(dir_input)
+                .width(calc_dir_input_width(&s.dir));
+
+            let update_btn = Button::new("更新MOD").on_press(Message::Update {
+                id: s.id.to_string(),
+            });
+
+            // let progress_bar = self.make_progress_bar();
+            let row = Row::new().push(server).push(dir_container).push(update_btn); //.push(progress_bar);
+            server_container = server_container.push(row);
         }
         drop(d_guard);
         let c = Container::new(server_container);
@@ -241,4 +272,14 @@ fn calc_dir_input_width(dir: &str) -> u16 {
         width = max;
     }
     width
+}
+
+fn select_server(id: String, servers: &mut Vec<Server>) {
+    for s in servers {
+        if s.id == id {
+            s.selected = true;
+        } else {
+            s.selected = false;
+        }
+    }
 }

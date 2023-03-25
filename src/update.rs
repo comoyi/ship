@@ -2,17 +2,18 @@ use crate::data::{Server, ServerFileInfo};
 use crate::error::Error;
 use log::debug;
 
-pub fn start() {
-    let s = Server {
-        name: "".to_string(),
-        protocol: "".to_string(),
-        host: "".to_string(),
-        port: 0,
-        dir: "".to_string(),
-        file_info: None,
-        selected: false,
-    };
-    let sfi = get_server_file_info(&s);
+pub fn start(id: String, servers: &Vec<Server>) {
+    let server_o = get_server_by_id(id, servers);
+    let server;
+    match server_o {
+        None => {
+            return;
+        }
+        Some(s) => {
+            server = s;
+        }
+    }
+    let sfi = get_server_file_info(&server);
     if let Err(_) = sfi {
         return;
     }
@@ -39,4 +40,15 @@ fn get_server_file_info(s: &Server) -> Result<ServerFileInfo, Error> {
 
 pub fn get_full_url(u: &str, s: &Server) -> String {
     format!("{}://{}:{}{}", s.protocol, s.host, s.port, u)
+}
+
+fn get_server_by_id(id: String, servers: &Vec<Server>) -> Option<&Server> {
+    let mut server = None;
+    for s in servers {
+        if s.id == id {
+            server = Some(s);
+            break;
+        }
+    }
+    server
 }

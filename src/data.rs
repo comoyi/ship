@@ -44,8 +44,9 @@ impl Default for UpdateProgress {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct Server {
+    pub id: String,
     pub name: String,
     pub protocol: String,
     pub host: String,
@@ -53,6 +54,7 @@ pub struct Server {
     pub dir: String,
     pub file_info: Option<ServerFileInfo>,
     pub selected: bool,
+    pub update_progress: UpdateProgress,
 }
 
 #[derive(Serialize_repr, Deserialize_repr)]

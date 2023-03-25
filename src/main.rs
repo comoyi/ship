@@ -9,6 +9,7 @@ mod gui;
 mod info;
 mod log;
 mod update;
+mod util;
 mod version;
 
 fn main() {

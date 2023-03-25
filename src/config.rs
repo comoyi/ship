@@ -1,4 +1,3 @@
-use crate::data::Server;
 use config::builder::DefaultState;
 use config::ConfigBuilder;
 use lazy_static::lazy_static;
@@ -15,9 +14,20 @@ pub struct Config {
     pub protocol: String,
     pub host: String,
     pub port: u16,
-    pub dir: String,
+    pub cache_dir: String,
     pub title: String,
     pub servers: Vec<Server>,
+}
+
+#[derive(Deserialize)]
+pub struct Server {
+    pub id: String,
+    pub name: String,
+    pub protocol: String,
+    pub host: String,
+    pub port: u16,
+    pub dir: String,
+    pub selected: bool,
 }
 
 pub fn init_config() -> Config {
@@ -58,11 +68,11 @@ fn set_default(b: ConfigBuilder<DefaultState>) -> ConfigBuilder<DefaultState> {
         .unwrap()
         .set_default("protocol", "http")
         .unwrap()
-        .set_default("ip", "127.0.0.1")
+        .set_default("host", "127.0.0.1")
         .unwrap()
         .set_default("port", 8080)
         .unwrap()
-        .set_default("dir", "")
+        .set_default("cache_dir", "")
         .unwrap()
         .set_default("title", "")
         .unwrap()

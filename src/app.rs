@@ -1,8 +1,8 @@
 use crate::config::CONFIG;
 use crate::data::{AppData, GuiFlags, Server};
 use crate::downloader::Downloader;
-use crate::gui;
 use crate::info::InfoManager;
+use crate::{gui, util};
 use log::info;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -14,11 +14,12 @@ pub fn start() {
 
     // init app_data
     let mut app_data = AppData::new();
-    app_data.dir = CONFIG.dir.clone();
 
     let mut ss: Vec<Server> = vec![];
     for s in &CONFIG.servers {
+        let id = util::md5sum(&format!("{}{}{}", s.protocol, s.host, s.port));
         let server = Server {
+            id: format!("{}-{}", s.id, id),
             name: s.name.to_string(),
             protocol: s.protocol.to_string(),
             host: s.host.to_string(),
@@ -26,6 +27,7 @@ pub fn start() {
             dir: s.dir.to_string(),
             file_info: None,
             selected: s.selected,
+            update_progress: Default::default(),
         };
         ss.push(server);
     }
