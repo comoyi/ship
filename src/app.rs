@@ -1,5 +1,5 @@
 use crate::config::CONFIG;
-use crate::data::{AppData, GuiFlags};
+use crate::data::{AppData, GuiFlags, Server};
 use crate::downloader::Downloader;
 use crate::gui;
 use crate::info::InfoManager;
@@ -15,6 +15,20 @@ pub fn start() {
     // init app_data
     let mut app_data = AppData::new();
     app_data.dir = CONFIG.dir.clone();
+
+    let mut ss: Vec<Server> = vec![];
+    for s in &CONFIG.servers {
+        let server = Server {
+            name: s.name.to_string(),
+            protocol: s.protocol.to_string(),
+            host: s.host.to_string(),
+            port: s.port,
+            dir: s.dir.to_string(),
+            file_info: None,
+        };
+        ss.push(server);
+    }
+    app_data.servers = ss;
 
     // clone app_data
     let d = Arc::new(Mutex::new(app_data));

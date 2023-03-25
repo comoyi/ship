@@ -1,3 +1,4 @@
+use crate::data::Server;
 use config::builder::DefaultState;
 use config::ConfigBuilder;
 use lazy_static::lazy_static;
@@ -8,12 +9,15 @@ lazy_static! {
     pub static ref CONFIG: Config = init_config();
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct Config {
     pub log_level: String,
+    pub protocol: String,
+    pub host: String,
     pub port: u16,
     pub dir: String,
     pub title: String,
+    pub servers: Vec<Server>,
 }
 
 pub fn init_config() -> Config {
@@ -51,6 +55,10 @@ pub fn init_config() -> Config {
 
 fn set_default(b: ConfigBuilder<DefaultState>) -> ConfigBuilder<DefaultState> {
     b.set_default("log_level", "TRACE")
+        .unwrap()
+        .set_default("protocol", "http")
+        .unwrap()
+        .set_default("ip", "127.0.0.1")
         .unwrap()
         .set_default("port", 8080)
         .unwrap()

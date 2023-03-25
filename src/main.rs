@@ -4,9 +4,11 @@ mod app;
 mod config;
 mod data;
 mod downloader;
+mod error;
 mod gui;
 mod info;
 mod log;
+mod update;
 mod version;
 
 fn main() {
@@ -15,5 +17,6 @@ fn main() {
     // config::init_config();
 
     log::init_log();
+
     app::start();
 }

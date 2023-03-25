@@ -1,7 +1,9 @@
 use crate::config::CONFIG;
-use crate::data::GuiFlags;
-use crate::{app, version};
-use iced::widget::{Button, Column, Container, ProgressBar, Row, Scrollable, Text, TextInput};
+use crate::data::{GuiFlags, Server};
+use crate::{app, update, version};
+use iced::widget::{
+    Button, Column, Container, ProgressBar, Radio, Row, Scrollable, Text, TextInput,
+};
 use iced::window::Icon;
 use iced::{theme, window, Application, Command, Element, Padding, Renderer, Settings};
 use iced_aw::menu::{MenuBar, MenuTree};
@@ -41,6 +43,7 @@ struct Gui {
 
 #[derive(Debug, Clone)]
 enum Message {
+    SelectServer,
     Update,
 
     Exit,
@@ -76,6 +79,7 @@ impl Application for Gui {
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
+            Message::SelectServer => {}
             Message::Update => {
                 let d_guard = self.flags.data.lock().unwrap();
                 let dir = d_guard.dir.clone();
@@ -85,6 +89,7 @@ impl Application for Gui {
                     let im_guard = self.flags.info_manager.lock().unwrap();
                     im_guard.add("开始更新");
                     drop(im_guard);
+                    update::start();
                 }
             }
             Message::Exit => {
@@ -156,7 +161,9 @@ impl Application for Gui {
             .push(info_scroll)
             .spacing(DEFAULT_SPACING);
 
-        let mc = Row::new().push(opt_container);
+        let server_container = self.make_server_panel();
+
+        let mc = Column::new().push(opt_container).push(server_container);
 
         let c = Container::new(mc).padding(DEFAULT_PADDING);
 
@@ -201,6 +208,25 @@ impl Gui {
         drop(d_guard);
         let progress_bar = ProgressBar::new(start..=end, value);
         progress_bar
+    }
+
+    fn make_server_panel(
+        &self,
+    ) -> Container<
+        '_,
+        <Gui as iced::Application>::Message,
+        Renderer<<Gui as iced::Application>::Theme>,
+    > {
+        let d_guard = self.flags.data.lock().unwrap();
+        let mut server_container = Column::new().spacing(2);
+        for s in &d_guard.servers {
+            let server_text = Text::new(s.name.to_string());
+            let server = Button::new(server_text).on_press(Message::SelectServer);
+            server_container = server_container.push(server);
+        }
+        drop(d_guard);
+        let c = Container::new(server_container);
+        c
     }
 }
 

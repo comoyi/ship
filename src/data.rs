@@ -1,5 +1,6 @@
 use crate::info::InfoManager;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
@@ -14,11 +15,18 @@ impl GuiFlags {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 pub struct AppData {
     pub update_progress: UpdateProgress,
     pub dir: String,
+    pub servers: Vec<Server>,
     pub infos: Vec<String>,
+}
+
+impl AppData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 #[derive(Serialize)]
@@ -36,18 +44,68 @@ impl Default for UpdateProgress {
     }
 }
 
-impl AppData {
-    pub fn new() -> Self {
-        Self::default()
-    }
+#[derive(Serialize, Deserialize)]
+pub struct Server {
+    pub name: String,
+    pub protocol: String,
+    pub host: String,
+    pub port: u16,
+    pub dir: String,
+    pub file_info: Option<ServerFileInfo>,
 }
 
-impl Default for AppData {
+#[derive(Serialize_repr, Deserialize_repr)]
+#[repr(i8)]
+pub enum ScanStatus {
+    Wait = 10,
+    Scanning = 20,
+    Failed = 30,
+    Completed = 40,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ServerFileInfo {
+    #[serde(rename = "status")]
+    pub scan_status: ScanStatus,
+    pub last_scan_finish_time: i64,
+    pub files: Vec<FileInfo>,
+}
+
+impl Default for ServerFileInfo {
     fn default() -> Self {
-        Self {
-            update_progress: Default::default(),
-            dir: "".to_string(),
-            infos: vec![],
+        ServerFileInfo {
+            scan_status: ScanStatus::Wait,
+            last_scan_finish_time: 0,
+            files: vec![],
         }
     }
 }
+
+#[derive(Serialize_repr, Deserialize_repr)]
+#[repr(i8)]
+pub enum FileType {
+    Unknown = 0,
+    File = 1,
+    Dir = 2,
+    Symlink = 4,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct FileInfo {
+    pub relative_path: String,
+    #[serde(rename = "type")]
+    pub file_type: FileType,
+    pub size: u64,
+    pub hash: String,
+}
+
+// impl FileInfo {
+//     pub fn new() -> Self {
+//         FileInfo {
+//             relative_path: "".to_string(),
+//             file_type: FileType::Unknown,
+//             size: 0,
+//             hash: "".to_string(),
+//         }
+//     }
+// }
