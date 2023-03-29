@@ -1,5 +1,6 @@
 use crate::data::{ClientFileInfo, FileInfo, Server, ServerFileInfo};
 use crate::error::Error;
+use crate::scan;
 use log::debug;
 use std::path::Path;
 
@@ -43,11 +44,12 @@ pub fn start(id: String, servers: &Vec<Server>) {
         }
     }
 
-    let (changed_files, add_files, del_files) = diff_server_client(&sfi, &cfi);
+    let (add_files, changed_files, del_files) = diff_server_client(&sfi, &cfi);
     debug!(
-        "sfi: {:?},cfi: {:?}, changed_files: {:?}, add_files: {:?}, del_files: {:?}",
-        sfi, cfi, changed_files, add_files, del_files
+        "sfi: {:?},cfi: {:?}, add_files: {:?}, changed_files: {:?}, del_files: {:?}",
+        sfi, cfi, add_files, changed_files, del_files
     );
+    print_diff_detail(&sfi, &cfi, &add_files, &changed_files, &del_files);
 }
 
 fn get_server_file_info(s: &Server) -> Result<ServerFileInfo, Error> {
@@ -74,8 +76,8 @@ fn get_server_file_info(s: &Server) -> Result<ServerFileInfo, Error> {
 }
 
 fn get_client_file_info(s: &Server) -> Result<ClientFileInfo, Error> {
-    Ok(ClientFileInfo::default())
-    // Err(Error::GetClientFileInfoError)
+    let cfi_r = scan::scan(&s.dir);
+    cfi_r
 }
 
 pub fn get_full_url(u: &str, s: &Server) -> String {
@@ -123,7 +125,7 @@ fn diff_server_client(
             break;
         }
     }
-    (changed_files, add_files, del_files)
+    (add_files, changed_files, del_files)
 }
 
 fn is_in(f: &FileInfo, fs: &Vec<FileInfo>) -> bool {
@@ -140,4 +142,29 @@ fn is_in(f: &FileInfo, fs: &Vec<FileInfo>) -> bool {
         return true;
     }
     false
+}
+
+fn print_diff_detail(
+    sfi: &ServerFileInfo,
+    cfi: &ClientFileInfo,
+    add_files: &Vec<FileInfo>,
+    changed_files: &Vec<FileInfo>,
+    del_files: &Vec<FileInfo>,
+) {
+    print_file_info(&sfi.files, "server");
+    print_file_info(&cfi.files, "client");
+    print_file_info(&add_files, "add_files");
+    print_file_info(&changed_files, "changed_files");
+    print_file_info(&del_files, "del_files");
+}
+
+fn print_file_info(fi: &Vec<FileInfo>, s: &str) {
+    debug!("------- {} -------", s);
+    for f in fi {
+        debug!(
+            "type: {:?}, hash: {:32}, size: {:10}, rel_path: {}",
+            f.file_type, f.hash, f.size, f.relative_path
+        );
+    }
+    debug!("------- {} -------", s);
 }

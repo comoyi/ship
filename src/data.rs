@@ -121,16 +121,16 @@ pub struct FileInfo {
     pub hash: String,
 }
 
-// impl FileInfo {
-//     pub fn new() -> Self {
-//         FileInfo {
-//             relative_path: "".to_string(),
-//             file_type: FileType::Unknown,
-//             size: 0,
-//             hash: "".to_string(),
-//         }
-//     }
-// }
+impl FileInfo {
+    pub fn new() -> Self {
+        FileInfo {
+            relative_path: "".to_string(),
+            file_type: FileType::Unknown,
+            size: 0,
+            hash: "".to_string(),
+        }
+    }
+}
 
 struct Cache {
     chunks: HashMap<String, CacheFile>,

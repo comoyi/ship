@@ -9,6 +9,7 @@ mod error;
 mod gui;
 mod info;
 mod log;
+mod scan;
 mod update;
 mod util;
 mod version;
