@@ -112,6 +112,17 @@ pub enum FileType {
     Symlink = 4,
 }
 
+impl FileType {
+    pub fn to_formatted_string(&self)->String{
+        match self {
+            FileType::Unknown => {String::from("Unknown")}
+            FileType::File => {String::from("File   ")}
+            FileType::Dir => {String::from("Dir    ")}
+            FileType::Symlink => {String::from("Symlink")}
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileInfo {
     pub relative_path: String,

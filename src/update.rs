@@ -162,8 +162,8 @@ fn print_file_info(fi: &Vec<FileInfo>, s: &str) {
     debug!("------- {} -------", s);
     for f in fi {
         debug!(
-            "type: {:?}, hash: {:32}, size: {:10}, rel_path: {}",
-            f.file_type, f.hash, f.size, f.relative_path
+            "type: {}, hash: {:32}, size: {:10}, rel_path: {}",
+            f.file_type.to_formatted_string(), f.hash, f.size, f.relative_path
         );
     }
     debug!("------- {} -------", s);
