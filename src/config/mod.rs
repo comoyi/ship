@@ -1,6 +1,7 @@
 use config::builder::DefaultState;
 use config::ConfigBuilder;
 use lazy_static::lazy_static;
+use log::debug;
 use serde::Deserialize;
 use std::path::Path;
 
@@ -11,6 +12,35 @@ lazy_static! {
 #[derive(Deserialize)]
 pub struct Config {
     pub log_level: String,
+    pub server: Server,
+}
+
+impl Config {
+    pub fn print_config(&self) {
+        debug!("log_level: {}", self.log_level);
+        debug!(
+            "server.address: {}",
+            self.server.address.to_address_string()
+        );
+    }
+}
+
+#[derive(Deserialize)]
+pub struct Server {
+    pub address: Address,
+}
+
+#[derive(Deserialize)]
+pub struct Address {
+    pub protocol: String,
+    pub host: String,
+    pub port: u16,
+}
+
+impl Address {
+    pub fn to_address_string(&self) -> String {
+        format!("{}://{}:{}", self.protocol, self.host, self.port)
+    }
 }
 
 pub fn init_config() -> Config {
@@ -31,17 +61,14 @@ pub fn init_config() -> Config {
     }
 
     let c = b.build().unwrap();
-    let conf_result = c.try_deserialize::<Config>();
-    let conf;
-    match conf_result {
-        Ok(c) => {
-            conf = c;
-        }
+    let conf_r = c.try_deserialize::<Config>();
+    let conf = match conf_r {
+        Ok(c) => c,
         Err(e) => {
-            println!("load config failed: {}", e.to_string());
-            panic!("load config failed: {}", e.to_string());
+            println!("load config failed: {}", e);
+            panic!("load config failed: {}", e);
         }
-    }
+    };
     // println!("{:?}", conf);
     conf
 }

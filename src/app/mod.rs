@@ -11,6 +11,8 @@ pub fn start() {
 
     init_log();
 
+    CONFIG.print_config();
+
     let app_data = AppData::new();
     let app_data_ptr = Arc::new(Mutex::new(app_data));
     let gui_flags = GuiFlags::new(&app_data_ptr);

@@ -1,2 +1,6 @@
 log_level = 'OFF'
 
+[server]
+address.protocol = 'http'
+address.host = '127.0.0.1'
+address.port = 8081

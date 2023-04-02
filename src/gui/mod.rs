@@ -71,7 +71,7 @@ impl Application for Gui {
     fn title(&self) -> String {
         let mut t = format!("{} - v{}", app::APP_NAME, version::VERSION_TEXT);
         let sub_title = "";
-        if sub_title.len() > 0 {
+        if !sub_title.is_empty() {
             t = format!("{}  {}", t, sub_title);
         }
         t
