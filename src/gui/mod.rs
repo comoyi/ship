@@ -3,7 +3,7 @@ mod menubar;
 use crate::app::AppDataPtr;
 use crate::gui::menubar::make_menubar;
 use crate::{app, version};
-use iced::widget::{Column, Container, Text};
+use iced::widget::{Column, Container, Text, TextInput};
 use iced::window::Icon;
 use iced::{window, Application, Command, Element, Padding, Renderer, Settings};
 use iced_aw::{Card, Modal};
@@ -109,7 +109,16 @@ impl Application for Gui {
         })
         .backdrop(Message::CloseModal)
         .on_esc(Message::CloseModal);
-        let mc = Column::new().push(modal_about).push(mb);
+
+        let app_data_g = self.flags.data.lock().unwrap();
+        let base_dir_input =
+            TextInput::new("", &app_data_g.base_dir, |_s| -> Message { Message::Noop });
+        drop(app_data_g);
+
+        let mc = Column::new()
+            .push(modal_about)
+            .push(mb)
+            .push(base_dir_input);
         let c = Container::new(mc).padding(DEFAULT_PADDING);
         c.into()
     }
