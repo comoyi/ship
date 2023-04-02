@@ -1,6 +1,7 @@
 use crate::data::{ClientFileInfo, FileInfo, Server, ServerFileInfo};
 use crate::error::Error;
 use crate::scan;
+use crate::sync::sync_files;
 use log::debug;
 use std::path::Path;
 
@@ -50,6 +51,8 @@ pub fn start(id: String, servers: &Vec<Server>) {
         sfi, cfi, add_files, changed_files, del_files
     );
     print_diff_detail(&sfi, &cfi, &add_files, &changed_files, &del_files);
+
+    sync_files(&add_files,&changed_files,&del_files);
 }
 
 fn get_server_file_info(s: &Server) -> Result<ServerFileInfo, Error> {
@@ -163,7 +166,10 @@ fn print_file_info(fi: &Vec<FileInfo>, s: &str) {
     for f in fi {
         debug!(
             "type: {}, hash: {:32}, size: {:10}, rel_path: {}",
-            f.file_type.to_formatted_string(), f.hash, f.size, f.relative_path
+            f.file_type.to_formatted_string(),
+            f.hash,
+            f.size,
+            f.relative_path
         );
     }
     debug!("------- {} -------", s);

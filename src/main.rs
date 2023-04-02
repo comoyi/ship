@@ -10,6 +10,7 @@ mod gui;
 mod info;
 mod log;
 mod scan;
+mod sync;
 mod update;
 mod util;
 mod version;

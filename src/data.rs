@@ -113,12 +113,12 @@ pub enum FileType {
 }
 
 impl FileType {
-    pub fn to_formatted_string(&self)->String{
+    pub fn to_formatted_string(&self) -> String {
         match self {
-            FileType::Unknown => {String::from("Unknown")}
-            FileType::File => {String::from("File   ")}
-            FileType::Dir => {String::from("Dir    ")}
-            FileType::Symlink => {String::from("Symlink")}
+            FileType::Unknown => String::from("Unknown"),
+            FileType::File => String::from("File   "),
+            FileType::Dir => String::from("Dir    "),
+            FileType::Symlink => String::from("Symlink"),
         }
     }
 }
