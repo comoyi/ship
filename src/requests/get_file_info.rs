@@ -20,6 +20,7 @@ pub struct FileInfo {
     pub size: u64,
     pub hash: String,
 }
+
 #[derive(Deserialize_repr, Debug)]
 #[repr(i8)]
 pub enum ScanStatus {
@@ -28,6 +29,7 @@ pub enum ScanStatus {
     Failed = 30,
     Completed = 40,
 }
+
 #[derive(Deserialize_repr, Debug)]
 #[repr(i8)]
 pub enum FileType {
@@ -36,6 +38,7 @@ pub enum FileType {
     Dir = 2,
     Symlink = 4,
 }
+
 pub fn get_file_info() -> Result<ServerFileInfo, Error> {
     debug!("get_info");
     let url = get_full_url("/files");

@@ -1,6 +1,7 @@
 mod menubar;
 
-use crate::app::AppDataPtr;
+use crate::data::common::GServerInfo;
+use crate::data::core::AppDataPtr;
 use crate::gui::menubar::make_menubar;
 use crate::{app, requests, version};
 use iced::widget::{Button, Column, Container, Text, TextInput};
@@ -8,7 +9,7 @@ use iced::window::Icon;
 use iced::{window, Application, Command, Element, Padding, Renderer, Settings};
 use iced_aw::{Card, Modal};
 use image::ImageFormat;
-use log::info;
+use log::{debug, info};
 use std::process::exit;
 use std::sync::Arc;
 
@@ -93,6 +94,8 @@ impl Application for Gui {
             Message::Test => {
                 let _ = requests::get_info();
                 let _ = requests::get_file_info();
+                let gsi = GServerInfo::test_data();
+                debug!("GServerInfo: {:?}", gsi);
             }
         }
         Command::none()

@@ -1,4 +1,5 @@
 use crate::config::CONFIG;
+use crate::data::core::AppData;
 use crate::gui;
 use crate::gui::GuiFlags;
 use crate::log::init_log;
@@ -21,27 +22,6 @@ pub fn start() {
     let app_data_ptr = Arc::new(Mutex::new(app_data));
     let gui_flags = GuiFlags::new(&app_data_ptr);
     gui::start(gui_flags);
-}
-
-pub type AppDataPtr = Arc<Mutex<AppData>>;
-pub struct AppData {
-    pub base_dir: String,
-}
-
-impl AppData {
-    pub fn new() -> Self {
-        AppData {
-            base_dir: "".to_string(),
-        }
-    }
-}
-
-impl Default for AppData {
-    fn default() -> Self {
-        Self {
-            base_dir: "".to_string(),
-        }
-    }
 }
 
 fn get_base_dir() -> String {
