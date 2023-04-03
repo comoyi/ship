@@ -1,6 +1,7 @@
 mod menubar;
+mod view;
 
-use crate::data::common::GServerInfo;
+use crate::data::common::{GServer, GServerInfo};
 use crate::data::core::AppDataPtr;
 use crate::gui::menubar::make_menubar;
 use crate::{app, requests, version};
@@ -52,6 +53,7 @@ pub enum Message {
     CloseModal,
     Noop,
     Test,
+    SelectGServer(GServer),
 }
 
 impl Application for Gui {
@@ -97,6 +99,9 @@ impl Application for Gui {
                 let _ = requests::get_info(gsi.servers.get(0).unwrap());
                 let _ = requests::get_file_info(gsi.servers.get(0).unwrap());
             }
+            Message::SelectGServer(gs) => {
+                let sfi_r = requests::get_file_info(&gs);
+            }
         }
         Command::none()
     }
@@ -122,6 +127,7 @@ impl Application for Gui {
         let base_dir_input =
             TextInput::new("", &app_data_g.base_dir, |_s| -> Message { Message::Noop });
         drop(app_data_g);
+        let gs_container = self.make_server_panel();
 
         let test_btn = Button::new("Test").on_press(Message::Test);
 
@@ -129,7 +135,8 @@ impl Application for Gui {
             .push(modal_about)
             .push(mb)
             .push(base_dir_input)
-            .push(test_btn);
+            .push(test_btn)
+            .push(gs_container);
         let c = Container::new(mc).padding(DEFAULT_PADDING);
         c.into()
     }

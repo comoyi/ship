@@ -1,4 +1,5 @@
 use crate::config::CONFIG;
+use crate::data::common::GServerInfo;
 use crate::data::core::AppData;
 use crate::gui;
 use crate::gui::GuiFlags;
@@ -16,9 +17,11 @@ pub fn start() {
 
     CONFIG.print_config();
 
-    let mut app_data = AppData::new();
+    let mut app_data = AppData::default();
     let base_dir = get_base_dir();
     app_data.base_dir = base_dir;
+    let gsi = GServerInfo::test_data();
+    app_data.g_server_info = gsi;
     let app_data_ptr = Arc::new(Mutex::new(app_data));
     let gui_flags = GuiFlags::new(&app_data_ptr);
     gui::start(gui_flags);

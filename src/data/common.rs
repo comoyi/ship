@@ -24,7 +24,7 @@ impl GServerInfo {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GServer {
     pub name: String,
     pub address: Address,
@@ -39,7 +39,7 @@ impl GServer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Address {
     pub protocol: String,
     pub host: String,
