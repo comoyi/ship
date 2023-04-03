@@ -74,3 +74,10 @@ impl Address {
         format!("{}://{}:{}", self.protocol, self.host, self.port)
     }
 }
+
+pub enum StartStatus {
+    Wait,
+    CheckUpdate,
+    Starting,
+    Started,
+}

@@ -1,6 +1,6 @@
 mod view;
 
-use crate::data::common::{GServer, GServerInfo};
+use crate::data::common::{GServer, GServerInfo, StartStatus};
 use crate::data::core::AppDataPtr;
 use crate::gui::view::menubar::make_menubar;
 use crate::{app, requests, version};
@@ -53,6 +53,7 @@ pub enum Message {
     Noop,
     Test,
     SelectGServer(GServer),
+    ClickStart,
 }
 
 impl Application for Gui {
@@ -101,6 +102,11 @@ impl Application for Gui {
                 app_data_g.selected_g_server_uid = Some(gs.uid.to_string());
                 drop(app_data_g);
                 let sfi_r = requests::get_file_info(&gs);
+            }
+            Message::ClickStart => {
+                let mut app_data_g = self.flags.data.lock().unwrap();
+                app_data_g.start_status = StartStatus::CheckUpdate;
+                drop(app_data_g);
             }
         }
         Command::none()
