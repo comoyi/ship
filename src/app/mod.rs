@@ -4,7 +4,6 @@ use crate::gui::GuiFlags;
 use crate::log::init_log;
 use log::{debug, warn};
 use std::env::current_exe;
-use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 pub const APP_NAME: &str = "Valheim Launcher";

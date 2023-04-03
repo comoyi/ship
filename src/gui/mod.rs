@@ -2,8 +2,8 @@ mod menubar;
 
 use crate::app::AppDataPtr;
 use crate::gui::menubar::make_menubar;
-use crate::{app, version};
-use iced::widget::{Column, Container, Text, TextInput};
+use crate::{app, requests, version};
+use iced::widget::{Button, Column, Container, Text, TextInput};
 use iced::window::Icon;
 use iced::{window, Application, Command, Element, Padding, Renderer, Settings};
 use iced_aw::{Card, Modal};
@@ -50,6 +50,7 @@ pub enum Message {
     OpenModal,
     CloseModal,
     Noop,
+    Test,
 }
 
 impl Application for Gui {
@@ -89,6 +90,10 @@ impl Application for Gui {
                 self.show_modal = false;
             }
             Message::Noop => {}
+            Message::Test => {
+                let _ = requests::get_info();
+                let _ = requests::get_file_info();
+            }
         }
         Command::none()
     }
@@ -115,10 +120,13 @@ impl Application for Gui {
             TextInput::new("", &app_data_g.base_dir, |_s| -> Message { Message::Noop });
         drop(app_data_g);
 
+        let test_btn = Button::new("Test").on_press(Message::Test);
+
         let mc = Column::new()
             .push(modal_about)
             .push(mb)
-            .push(base_dir_input);
+            .push(base_dir_input)
+            .push(test_btn);
         let c = Container::new(mc).padding(DEFAULT_PADDING);
         c.into()
     }
