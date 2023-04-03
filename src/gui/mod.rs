@@ -92,10 +92,10 @@ impl Application for Gui {
             }
             Message::Noop => {}
             Message::Test => {
-                let _ = requests::get_info();
-                let _ = requests::get_file_info();
                 let gsi = GServerInfo::test_data();
                 debug!("GServerInfo: {:?}", gsi);
+                let _ = requests::get_info(gsi.servers.get(0).unwrap());
+                let _ = requests::get_file_info(gsi.servers.get(0).unwrap());
             }
         }
         Command::none()

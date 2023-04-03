@@ -1,5 +1,6 @@
+use crate::data::common::GServer;
 use crate::error::Error;
-use crate::requests::get_full_url;
+use crate::requests::get_full_url_by_server;
 use log::debug;
 use serde::Deserialize;
 use serde_repr::Deserialize_repr;
@@ -39,10 +40,10 @@ pub enum FileType {
     Symlink = 4,
 }
 
-pub fn get_file_info() -> Result<ServerFileInfo, Error> {
-    debug!("get_info");
-    let url = get_full_url("/files");
-    let resp = reqwest::blocking::get(url).map_err(|_| Error::QueryError)?;
+pub fn get_file_info(server: &GServer) -> Result<ServerFileInfo, Error> {
+    debug!("get_file_info");
+    let url = get_full_url_by_server("/files", server);
+    let resp = reqwest::blocking::get(&url).map_err(|_| Error::QueryError)?;
     let body_r = resp.text();
     let body = match body_r {
         Ok(v) => v,
@@ -50,7 +51,7 @@ pub fn get_file_info() -> Result<ServerFileInfo, Error> {
             return Err(Error::ReadBodyError);
         }
     };
-    debug!("body: {}", body);
+    debug!("url: {}, body: {}", url, body);
     let data = serde_json::from_str::<ServerFileInfo>(&body).map_err(|e| {
         debug!("decode failed, err: {}", e);
         return Error::DecodeError;

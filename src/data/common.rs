@@ -6,8 +6,14 @@ pub struct GServerInfo {
 impl GServerInfo {
     pub fn test_data() -> Self {
         let mut servers = vec![];
-        servers.push(GServer::new("Server-1", Address::new("", "", 8081)));
-        servers.push(GServer::new("Server-2", Address::new("", "", 8082)));
+        servers.push(GServer::new(
+            "Server-1",
+            Address::new("http", "127.0.0.1", 57111),
+        ));
+        servers.push(GServer::new(
+            "Server-2",
+            Address::new("http", "127.0.0.1", 57211),
+        ));
         Self::new(servers)
     }
 }
@@ -47,5 +53,9 @@ impl Address {
             host: host.to_string(),
             port,
         }
+    }
+
+    pub fn to_address_string(&self) -> String {
+        format!("{}://{}:{}", self.protocol, self.host, self.port)
     }
 }
