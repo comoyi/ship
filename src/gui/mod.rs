@@ -1,9 +1,8 @@
-mod menubar;
 mod view;
 
 use crate::data::common::{GServer, GServerInfo};
 use crate::data::core::AppDataPtr;
-use crate::gui::menubar::make_menubar;
+use crate::gui::view::menubar::make_menubar;
 use crate::{app, requests, version};
 use iced::widget::{Button, Column, Container, Text, TextInput};
 use iced::window::Icon;
@@ -96,10 +95,11 @@ impl Application for Gui {
             Message::Test => {
                 let gsi = GServerInfo::test_data();
                 debug!("GServerInfo: {:?}", gsi);
-                let _ = requests::get_info(gsi.servers.get(0).unwrap());
-                let _ = requests::get_file_info(gsi.servers.get(0).unwrap());
             }
             Message::SelectGServer(gs) => {
+                let mut app_data_g = self.flags.data.lock().unwrap();
+                app_data_g.selected_g_server_uid = Some(gs.uid.to_string());
+                drop(app_data_g);
                 let sfi_r = requests::get_file_info(&gs);
             }
         }

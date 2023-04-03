@@ -11,3 +11,8 @@ pub fn md5_file(path: &str) -> Result<String, io::Error> {
     let s = md5::compute(file_data);
     Ok(format!("{:x}", s))
 }
+
+pub fn md5_string(str: &str) -> String {
+    let s = md5::compute(str);
+    format!("{:x}", s)
+}

@@ -1,40 +1,55 @@
+use crate::utils::hash::md5::md5_string;
+use std::collections::HashMap;
+
 #[derive(Debug)]
 pub struct GServerInfo {
-    pub servers: Vec<GServer>,
+    pub servers: HashMap<String, GServer>,
 }
 
 impl GServerInfo {
     pub fn test_data() -> Self {
-        let mut servers = vec![];
-        servers.push(GServer::new(
+        let mut servers = HashMap::new();
+        let s1 = GServer::new(
+            1,
             "Server-1",
             Address::new("http", "127.0.0.1", 57111),
-        ));
-        servers.push(GServer::new(
+            "Server-1 description",
+        );
+        servers.insert(s1.uid.to_string(), s1);
+        let s2 = GServer::new(
+            2,
             "Server-2",
             Address::new("http", "127.0.0.1", 57211),
-        ));
+            "Server-2 description",
+        );
+        servers.insert(s2.uid.to_string(), s2);
         Self::new(servers)
     }
 }
 
 impl GServerInfo {
-    fn new(servers: Vec<GServer>) -> Self {
+    fn new(servers: HashMap<String, GServer>) -> Self {
         Self { servers: servers }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct GServer {
+    pub id: u64,
+    pub uid: String,
     pub name: String,
     pub address: Address,
+    pub description: String,
 }
 
 impl GServer {
-    pub fn new(name: &str, address: Address) -> Self {
+    pub fn new(id: u64, name: &str, address: Address, description: &str) -> Self {
         Self {
+            id,
+            uid: format!("{}-{}", id, md5_string(&address.to_address_string())),
             name: name.to_string(),
             address,
+            description: description.to_string(),
         }
     }
 }
