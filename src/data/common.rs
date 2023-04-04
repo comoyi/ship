@@ -78,6 +78,8 @@ impl Address {
 pub enum StartStatus {
     Wait,
     CheckUpdate,
+    CheckSteam,
+    StartSteam,
     Starting,
     Started,
 }

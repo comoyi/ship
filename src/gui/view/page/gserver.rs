@@ -1,8 +1,9 @@
 use crate::data::common::StartStatus;
 use crate::gui::{Gui, Message};
-use iced::widget::{Button, Column, Container, Row, Text};
+use iced::widget::{Button, Column, Container, ProgressBar, Row, Text};
 use iced::{theme, Renderer};
 use iced_aw::Card;
+use std::ops::RangeInclusive;
 
 impl Gui {
     pub fn make_server_panel(&self) -> Container<'static, Message, Renderer> {
@@ -27,6 +28,8 @@ impl Gui {
         match &app_data_g.start_status {
             StartStatus::Wait => start_tip_text = "",
             StartStatus::CheckUpdate => start_tip_text = "检查更新中",
+            StartStatus::CheckSteam => start_tip_text = "正在检查Steam状态",
+            StartStatus::StartSteam => start_tip_text = "正在启动Steam",
             StartStatus::Starting => start_tip_text = "正在启动",
             StartStatus::Started => start_tip_text = "启动成功",
         }
@@ -38,7 +41,12 @@ impl Gui {
 
         c2 = c2.push(gs_list_container).push(description_panel);
         let start_tip = Text::new(start_tip_text);
-        let c = Column::new().push(c2).push(start_btn).push(start_tip);
+        let progressbar = ProgressBar::new(RangeInclusive::new(0.0, 100.0), 5.0);
+        let c = Column::new()
+            .push(c2)
+            .push(start_btn)
+            .push(start_tip)
+            .push(progressbar);
 
         Container::new(c)
     }

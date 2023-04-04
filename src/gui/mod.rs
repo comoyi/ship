@@ -101,7 +101,6 @@ impl Application for Gui {
                 let mut app_data_g = self.flags.data.lock().unwrap();
                 app_data_g.selected_g_server_uid = Some(gs.uid.to_string());
                 drop(app_data_g);
-                let sfi_r = requests::get_file_info(&gs);
             }
             Message::ClickStart => {
                 let mut app_data_g = self.flags.data.lock().unwrap();
