@@ -6,6 +6,7 @@ mod gui;
 mod i18n;
 mod log;
 mod requests;
+mod scan;
 mod utils;
 mod version;
 
