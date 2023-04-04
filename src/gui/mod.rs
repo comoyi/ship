@@ -3,7 +3,8 @@ mod view;
 use crate::data::common::{GServer, GServerInfo, StartStatus};
 use crate::data::core::AppDataPtr;
 use crate::gui::view::menubar::make_menubar;
-use crate::{app, requests, version};
+use crate::i18n::L;
+use crate::{app, requests, t, version};
 use iced::widget::{Button, Column, Container, Text, TextInput};
 use iced::window::Icon;
 use iced::{window, Application, Command, Element, Padding, Renderer, Settings};
@@ -43,6 +44,7 @@ pub fn start(flags: GuiFlags) {
 pub struct Gui {
     flags: GuiFlags,
     show_modal: bool,
+    show_menubar: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -54,6 +56,7 @@ pub enum Message {
     Test,
     SelectGServer(GServer),
     ClickStart,
+    SwitchLanguage,
 }
 
 impl Application for Gui {
@@ -67,6 +70,7 @@ impl Application for Gui {
             Self {
                 flags: flags,
                 show_modal: false,
+                show_menubar: false,
             },
             Command::none(),
         )
@@ -107,15 +111,19 @@ impl Application for Gui {
                 app_data_g.start_status = StartStatus::CheckUpdate;
                 drop(app_data_g);
             }
+            Message::SwitchLanguage => {
+                L.switch_language();
+            }
         }
         Command::none()
     }
 
     fn view(&self) -> Element<'_, Self::Message, Renderer<Self::Theme>> {
-        let mb = make_menubar();
-        let modal_about = Modal::new(self.show_modal, "", || {
+        let menubar = make_menubar();
+        let navbar = self.make_nav_bar();
+        let about_modal = Modal::new(self.show_modal, "", || {
             Card::new(
-                Text::new("关于"),
+                Text::new(t!("about")),
                 Text::new(format!(
                     "{}\n\nVersion {}\n\nCopyright © 2023 清新池塘",
                     app::APP_NAME,
@@ -136,9 +144,12 @@ impl Application for Gui {
 
         let test_btn = Button::new("Test").on_press(Message::Test);
 
-        let mc = Column::new()
-            .push(modal_about)
-            .push(mb)
+        let mut mc = Column::new().push(about_modal);
+        if self.show_menubar {
+            mc = mc.push(menubar);
+        }
+        mc = mc
+            .push(navbar)
             .push(base_dir_input)
             .push(test_btn)
             .push(gs_container);

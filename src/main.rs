@@ -3,6 +3,7 @@ mod config;
 mod data;
 mod error;
 mod gui;
+mod i18n;
 mod log;
 mod requests;
 mod utils;

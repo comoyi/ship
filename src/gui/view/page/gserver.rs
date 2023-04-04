@@ -1,5 +1,6 @@
 use crate::data::common::StartStatus;
 use crate::gui::{Gui, Message};
+use crate::t;
 use iced::widget::{Button, Column, Container, ProgressBar, Row, Text};
 use iced::{theme, Renderer};
 use iced_aw::Card;
@@ -37,7 +38,7 @@ impl Gui {
 
         let description_panel = Card::new(Text::new("简介"), Text::new(description));
 
-        let start_btn = Button::new("开始").on_press(Message::ClickStart);
+        let start_btn = Button::new(t!("start")).on_press(Message::ClickStart);
 
         c2 = c2.push(gs_list_container).push(description_panel);
         let start_tip = Text::new(start_tip_text);
