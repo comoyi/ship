@@ -3,7 +3,7 @@ mod view;
 use crate::data::common::{GServer, GServerInfo, StartStatus};
 use crate::data::core::AppDataPtr;
 use crate::gui::view::menubar::make_menubar;
-use crate::i18n::L;
+use crate::i18n::DICTIONARY;
 use crate::{app, requests, t, version};
 use iced::widget::{Button, Column, Container, Text, TextInput};
 use iced::window::Icon;
@@ -112,7 +112,7 @@ impl Application for Gui {
                 drop(app_data_g);
             }
             Message::SwitchLanguage => {
-                L.switch_language();
+                DICTIONARY.switch_language();
             }
         }
         Command::none()
