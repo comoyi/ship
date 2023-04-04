@@ -137,8 +137,9 @@ impl Application for Gui {
         .on_esc(Message::CloseModal);
 
         let app_data_g = self.flags.data.lock().unwrap();
-        let base_dir_input =
-            TextInput::new("", &app_data_g.data_dir, |_s| -> Message { Message::Noop });
+        let base_dir_input = TextInput::new("", &app_data_g.settings.data_dir, |_s| -> Message {
+            Message::Noop
+        });
         drop(app_data_g);
         let gs_container = self.make_server_panel();
 

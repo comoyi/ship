@@ -12,7 +12,7 @@ impl Gui {
         let s_btn = Button::new(t!("server"))
             .style(theme::Button::Secondary)
             .on_press(Message::Noop);
-        let setting_btn = Button::new(t!("setting"))
+        let setting_btn = Button::new(t!("settings"))
             .style(theme::Button::Secondary)
             .on_press(Message::Noop);
         let language_btn = Button::new("en/中")

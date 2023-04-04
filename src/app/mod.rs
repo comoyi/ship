@@ -22,7 +22,7 @@ pub fn start() {
     let data_dir_r = filepath::get_exe_dir();
     match data_dir_r {
         Ok(data_dir) => {
-            app_data.data_dir = data_dir;
+            app_data.settings.data_dir = data_dir;
         }
         Err(e) => {
             panic!("err: {}", e);

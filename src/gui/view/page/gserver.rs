@@ -36,7 +36,7 @@ impl Gui {
         }
         drop(app_data_g);
 
-        let description_panel = Card::new(Text::new("简介"), Text::new(description));
+        let description_panel = Card::new(Text::new(t!("introduction")), Text::new(description));
 
         let start_btn = Button::new(t!("start")).on_press(Message::ClickStart);
 
