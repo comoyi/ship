@@ -9,7 +9,7 @@ use crate::utils::filepath;
 use log::warn;
 use std::sync::{Arc, Mutex};
 
-pub const APP_NAME: &str = "Valheim Launcher";
+pub const APP_NAME: &str = "Launcher";
 
 pub fn start() {
     let _ = &CONFIG.log_level;
