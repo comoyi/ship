@@ -1,7 +1,7 @@
 mod view;
 
 use crate::data::apps::App;
-use crate::data::common::{AppServer, AppServerInfo, StartStatus};
+use crate::data::common::{AppServer, AppServerInfo};
 use crate::data::core::AppDataPtr;
 use crate::data::page::{Pag, Page};
 use crate::i18n::DICTIONARY;
@@ -58,7 +58,7 @@ pub enum Message {
     Test,
     SelectApp(App),
     SelectAppServer(App, AppServer),
-    ClickStart,
+    ClickStart(App, AppServer),
     SwitchLanguage,
 
     GoToPage(Pag),
@@ -122,9 +122,11 @@ impl Application for Gui {
                     .selected_app_server_uid = Some(app_server.uid);
                 drop(app_data_g);
             }
-            Message::ClickStart => {
+            Message::ClickStart(app, app_server) => {
                 let mut app_data_g = self.flags.data.lock().unwrap();
-                app_data_g.start_status = StartStatus::CheckUpdate;
+                // app_data_g.app_manager.apps
+                //     .get_mut(Box::leak(app.uid.into_boxed_str()))
+                //     .unwrap().app_server_info.servers.get(&app_server.uid).unwrap();
                 drop(app_data_g);
             }
             Message::SwitchLanguage => {

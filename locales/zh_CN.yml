@@ -8,3 +8,4 @@ start: 开始
 introduction: 简介
 welcome: 欢迎
 data_dir: 数据文件夹
+app_server_list_head: 服务器列表

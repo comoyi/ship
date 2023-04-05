@@ -1,55 +1,74 @@
 use crate::data::apps::App;
-use crate::data::common::StartStatus;
+use crate::data::common::AppServer;
 use crate::gui::{Gui, Message};
 use crate::t;
 use iced::widget::{Button, Column, Container, ProgressBar, Row, Text};
 use iced::{theme, Renderer};
 use iced_aw::Card;
-use std::ops::RangeInclusive;
+use std::ops::{Deref, RangeInclusive};
 
 impl Gui {
-    pub fn make_template_a_page(&self, app: &App) -> Container<'static, Message, Renderer> {
-        let mut c2 = Row::new();
-        let app_label = Text::new(app.name.clone());
-        let mut app_server_list_container = Column::new();
+    pub fn make_template_a_page(&self, app: &App) -> Container<'static, Message> {
+        let mut app_server_list = Column::new();
 
-        let mut description = "".to_string();
-        let mut start_tip_text = "";
-        let selected_uid = app.selected_app_server_uid.clone();
-        for (_, x) in &app.app_server_info.servers {
-            let app_server_text = Text::new(x.name.to_string());
+        let mut app_servers_c = Column::new();
+        let mut start_tip_text = "...";
+        let mut selected_uid_o = app.selected_app_server_uid.clone();
+        let mut flag = false;
+        let mut map_vec: Vec<(&String, &AppServer)> = app.app_server_info.servers.iter().collect();
+        map_vec.sort_by(|a, b| b.1.priority.cmp(&a.1.priority));
+        for (_, app_server) in map_vec {
+            if !flag {
+                flag = !flag;
+                let mut app_data_g = self.flags.data.lock().unwrap();
+                let mut selected_app_server = app_data_g
+                    .app_manager
+                    .apps
+                    .get_mut(Box::leak(app.uid.clone().into_boxed_str()))
+                    .unwrap();
+                if selected_app_server.selected_app_server_uid.is_none() {
+                    selected_app_server.selected_app_server_uid = Some(app_server.uid.clone());
+                    selected_uid_o = Some(app_server.uid.clone());
+                }
+                drop(app_data_g);
+            }
+
+            let app_server_text: Text<'_, Renderer> = Text::new(app_server.name.clone());
             let mut app_server_btn = Button::new(app_server_text)
-                .on_press(Message::SelectAppServer(app.clone(), x.clone()));
-            if selected_uid.is_some() {
-                if selected_uid.clone().unwrap() == x.uid {
+                .on_press(Message::SelectAppServer(app.clone(), app_server.clone()))
+                .style(theme::Button::Secondary);
+            if let Some(selected_uid) = &selected_uid_o {
+                if selected_uid == &app_server.uid {
                     app_server_btn = app_server_btn.style(theme::Button::Positive);
-                    description = x.description.to_string();
+
+                    let description_panel = Card::new(
+                        Text::new(t!("introduction")),
+                        Text::new(app_server.description.clone()),
+                    );
+                    let start_btn = Button::new(t!("start"))
+                        .on_press(Message::ClickStart(app.clone(), app_server.clone()));
+                    let start_tip = Text::new(start_tip_text);
+                    let progress_bar = ProgressBar::new(RangeInclusive::new(0.0, 100.0), 5.0);
+
+                    let app_server_c = Column::new()
+                        .push(description_panel)
+                        .push(start_btn)
+                        .push(start_tip)
+                        .push(progress_bar);
+                    app_servers_c = app_servers_c.push(app_server_c);
                 }
             }
-            app_server_list_container = app_server_list_container.push(app_server_btn);
+            app_server_list = app_server_list.push(app_server_btn);
         }
-        // match &app.start_status {
-        //     StartStatus::Wait => start_tip_text = "",
-        //     StartStatus::CheckUpdate => start_tip_text = "检查更新中",
-        //     StartStatus::CheckSteam => start_tip_text = "正在检查Steam状态",
-        //     StartStatus::StartSteam => start_tip_text = "正在启动Steam",
-        //     StartStatus::Starting => start_tip_text = "正在启动",
-        //     StartStatus::Started => start_tip_text = "启动成功",
-        // }
 
-        let description_panel = Card::new(Text::new(t!("introduction")), Text::new(description));
-
-        let start_btn = Button::new(t!("start")).on_press(Message::ClickStart);
-
-        c2 = c2.push(app_server_list_container).push(description_panel);
-        let start_tip = Text::new(start_tip_text);
-        let progressbar = ProgressBar::new(RangeInclusive::new(0.0, 100.0), 5.0);
-        let c = Column::new()
-            .push(app_label)
-            .push(c2)
-            .push(start_btn)
-            .push(start_tip)
-            .push(progressbar);
+        let app_server_list_head = Text::new(t!("app_server_list_head"));
+        let mut app_server_list_container = Column::new()
+            .push(app_server_list_head)
+            .push(app_server_list);
+        let mc = Row::new()
+            .push(app_server_list_container)
+            .push(app_servers_c);
+        let c = Column::new().push(mc);
 
         Container::new(c)
     }

@@ -16,6 +16,7 @@ impl AppServerInfo {
             "Server-1",
             Address::new("http", "127.0.0.1", 57111),
             "Server-1 description",
+            100,
         );
         servers.insert(s1.uid.to_string(), s1);
         let s2 = AppServer::new(
@@ -23,6 +24,7 @@ impl AppServerInfo {
             "Server-2",
             Address::new("http", "127.0.0.1", 57211),
             "Server-2 description",
+            50,
         );
         servers.insert(s2.uid.to_string(), s2);
         Self::new(servers)
@@ -42,16 +44,18 @@ pub struct AppServer {
     pub name: String,
     pub address: Address,
     pub description: String,
+    pub priority: i64,
 }
 
 impl AppServer {
-    pub fn new(id: u64, name: &str, address: Address, description: &str) -> Self {
+    pub fn new(id: u64, name: &str, address: Address, description: &str, priority: i64) -> Self {
         Self {
             id,
             uid: format!("{}-{}", id, md5_string(&address.to_address_string())),
             name: name.to_string(),
             address,
             description: description.to_string(),
+            priority,
         }
     }
 }
@@ -79,11 +83,22 @@ impl Address {
 
 pub enum StartStatus {
     Wait,
+    StartHandle,
     CheckUpdate,
-    CheckSteam,
-    StartSteam,
     Starting,
     Started,
+}
+
+impl StartStatus {
+    pub fn description(&self) -> &'static str {
+        match self {
+            StartStatus::Wait => "",
+            StartStatus::StartHandle => "开始处理",
+            StartStatus::CheckUpdate => "检查更新中",
+            StartStatus::Starting => "正在启动",
+            StartStatus::Started => "启动成功",
+        }
+    }
 }
 
 #[derive(Serialize_repr, Deserialize_repr, Debug)]
