@@ -13,6 +13,7 @@ pub static mut SELECTED_LANGUAGE: Language = Language::EnUs;
 pub enum Language {
     EnUs,
     ZhCn,
+    JaJp,
 }
 
 impl Language {
@@ -24,6 +25,7 @@ impl Language {
         match self {
             Language::EnUs => "en_US",
             Language::ZhCn => "zh_CN",
+            Language::JaJp => "ja_JP",
         }
     }
 }
@@ -49,7 +51,7 @@ impl Dictionary {
     pub fn new_and_init() -> Self {
         debug!("init dict");
         let mut me = Self::default();
-        me.languages = vec![Language::EnUs, Language::ZhCn];
+        me.languages = vec![Language::EnUs, Language::ZhCn, Language::JaJp];
         let dict = read_languages(&me.languages);
         debug!("dict: {:?}", dict);
         me.dict = dict;
@@ -115,6 +117,9 @@ impl Dictionary {
                     SELECTED_LANGUAGE = Language::ZhCn;
                 }
                 Language::ZhCn => {
+                    SELECTED_LANGUAGE = Language::JaJp;
+                }
+                Language::JaJp => {
                     SELECTED_LANGUAGE = Language::EnUs;
                 }
             }
@@ -144,6 +149,10 @@ fn read_language(l: &str) -> HashMap<&'static str, &'static str> {
     dict_raw.insert(
         Language::ZhCn.code(),
         include_str!("../../locales/zh_CN.yml"),
+    );
+    dict_raw.insert(
+        Language::JaJp.code(),
+        include_str!("../../locales/ja_JP.yml"),
     );
     let a_r = dict_raw.get(l).ok_or("");
     match a_r {

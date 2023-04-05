@@ -15,7 +15,7 @@ impl Gui {
         let setting_btn = Button::new(t!("settings"))
             .style(theme::Button::Secondary)
             .on_press(Message::Noop);
-        let language_btn = Button::new("en/中")
+        let language_btn = Button::new("A/中/あ")
             .style(theme::Button::Secondary)
             .on_press(Message::SwitchLanguage);
         let help_btn = Button::new(t!("help"))
