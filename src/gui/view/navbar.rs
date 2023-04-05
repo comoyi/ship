@@ -11,11 +11,7 @@ impl Gui {
         let mut items = NavItems::new();
         let btn = NavItem::create(t!("home"), Message::GoToPage(Pag::Home), Some(Pag::Home));
         items.push(btn);
-        let btn = NavItem::create(
-            t!("server"),
-            Message::GoToPage(Pag::GServer),
-            Some(Pag::GServer),
-        );
+        let btn = NavItem::create(t!("apps"), Message::GoToPage(Pag::Apps), Some(Pag::Apps));
         items.push(btn);
         let btn = NavItem::create(
             t!("settings"),
@@ -23,11 +19,13 @@ impl Gui {
             Some(Pag::Settings),
         );
         items.push(btn);
-        let btn = NavItem::create("A/中/あ", Message::SwitchLanguage, None);
-        items.push(btn);
         let btn = NavItem::create(t!("help"), Message::GoToPage(Pag::Help), Some(Pag::Help));
         items.push(btn);
         let btn = NavItem::create(t!("about"), Message::OpenModal, None);
+        items.push(btn);
+        let btn = NavItem::create("    ", Message::Noop, None);
+        items.push(btn);
+        let btn = NavItem::create("A/中/あ", Message::SwitchLanguage, None);
         items.push(btn);
         let btn = NavItem::create("Debug", Message::GoToPage(Pag::Debug), Some(Pag::Debug));
         items.push(btn);

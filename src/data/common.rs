@@ -4,21 +4,21 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct GServerInfo {
-    pub servers: HashMap<String, GServer>,
+pub struct AppServerInfo {
+    pub servers: HashMap<String, AppServer>,
 }
 
-impl GServerInfo {
+impl AppServerInfo {
     pub fn test_data() -> Self {
         let mut servers = HashMap::new();
-        let s1 = GServer::new(
+        let s1 = AppServer::new(
             1,
             "Server-1",
             Address::new("http", "127.0.0.1", 57111),
             "Server-1 description",
         );
         servers.insert(s1.uid.to_string(), s1);
-        let s2 = GServer::new(
+        let s2 = AppServer::new(
             2,
             "Server-2",
             Address::new("http", "127.0.0.1", 57211),
@@ -29,14 +29,14 @@ impl GServerInfo {
     }
 }
 
-impl GServerInfo {
-    fn new(servers: HashMap<String, GServer>) -> Self {
+impl AppServerInfo {
+    fn new(servers: HashMap<String, AppServer>) -> Self {
         Self { servers: servers }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct GServer {
+pub struct AppServer {
     pub id: u64,
     pub uid: String,
     pub name: String,
@@ -44,7 +44,7 @@ pub struct GServer {
     pub description: String,
 }
 
-impl GServer {
+impl AppServer {
     pub fn new(id: u64, name: &str, address: Address, description: &str) -> Self {
         Self {
             id,

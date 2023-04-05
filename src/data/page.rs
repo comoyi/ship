@@ -3,8 +3,8 @@ use std::collections::HashMap;
 #[derive(PartialEq, Debug, Clone)]
 pub enum Pag {
     Home,
+    Apps,
     Settings,
-    GServer,
     Help,
     Debug,
 }

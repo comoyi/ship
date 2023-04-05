@@ -1,6 +1,6 @@
 mod view;
 
-use crate::data::common::{GServer, GServerInfo, StartStatus};
+use crate::data::common::{AppServer, AppServerInfo, StartStatus};
 use crate::data::core::AppDataPtr;
 use crate::data::page::{Pag, Page};
 use crate::i18n::DICTIONARY;
@@ -30,6 +30,7 @@ pub fn start(flags: GuiFlags) {
         window: window::Settings {
             size: (680, 380),
             position: window::Position::Centered,
+            min_size: Some((500, 300)),
             resizable: true,
             decorations: true,
             icon: icon,
@@ -54,7 +55,7 @@ pub enum Message {
     CloseModal,
     Noop,
     Test,
-    SelectGServer(GServer),
+    SelectAppServer(AppServer),
     ClickStart,
     SwitchLanguage,
 
@@ -100,12 +101,12 @@ impl Application for Gui {
             }
             Message::Noop => {}
             Message::Test => {
-                let gsi = GServerInfo::test_data();
+                let gsi = AppServerInfo::test_data();
                 debug!("GServerInfo: {:?}", gsi);
             }
-            Message::SelectGServer(gs) => {
+            Message::SelectAppServer(app_server) => {
                 let mut app_data_g = self.flags.data.lock().unwrap();
-                app_data_g.selected_g_server_uid = Some(gs.uid.to_string());
+                // app_data_g.selected_g_server_uid = Some(app_server.uid.to_string());
                 drop(app_data_g);
             }
             Message::ClickStart => {
@@ -157,12 +158,12 @@ impl Application for Gui {
                 let page = self.make_home_page();
                 mc = mc.push(page)
             }
+            Pag::Apps => {
+                let page = self.make_apps_page();
+                mc = mc.push(page)
+            }
             Pag::Settings => {
                 let page = self.make_settings_page();
-                mc = mc.push(page);
-            }
-            Pag::GServer => {
-                let page = self.make_server_page();
                 mc = mc.push(page);
             }
             Pag::Help => {

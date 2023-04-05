@@ -1,4 +1,4 @@
-use crate::data::common::GServer;
+use crate::data::common::AppServer;
 use crate::error::Error;
 use crate::requests::get_full_url_by_server;
 use log::debug;
@@ -22,7 +22,7 @@ pub struct Address {
     pub port: u16,
 }
 
-pub fn get_info(server: &GServer) -> Result<Info, Error> {
+pub fn get_info(server: &AppServer) -> Result<Info, Error> {
     debug!("get_info");
     let url = get_full_url_by_server("/api/v1/info", server);
     let resp = reqwest::blocking::get(&url).map_err(|_| Error::QueryError)?;

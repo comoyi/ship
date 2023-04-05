@@ -1,4 +1,4 @@
-use crate::data::common::GServer;
+use crate::data::common::AppServer;
 use crate::error::Error;
 use crate::requests::get_full_url_by_server;
 use log::debug;
@@ -40,7 +40,7 @@ pub enum FileType {
     Symlink = 4,
 }
 
-pub fn get_file_info(server: &GServer) -> Result<ServerFileInfo, Error> {
+pub fn get_file_info(server: &AppServer) -> Result<ServerFileInfo, Error> {
     debug!("get_file_info");
     let url = get_full_url_by_server("/files", server);
     let resp = reqwest::blocking::get(&url).map_err(|_| Error::QueryError)?;
