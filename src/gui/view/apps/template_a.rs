@@ -1,5 +1,5 @@
 use crate::data::apps::App;
-use crate::data::common::AppServer;
+use crate::data::common::{AppServer, StartStatus};
 use crate::gui::{Gui, Message};
 use crate::t;
 use iced::widget::{Button, Column, Container, ProgressBar, Row, Text};
@@ -12,7 +12,6 @@ impl Gui {
         let mut app_server_list = Column::new();
 
         let mut app_servers_c = Column::new();
-        let mut start_tip_text = "...";
         let mut selected_uid_o = app.selected_app_server_uid.clone();
         let mut flag = false;
         let mut map_vec: Vec<(&String, &AppServer)> = app.app_server_info.servers.iter().collect();
@@ -47,14 +46,17 @@ impl Gui {
                     );
                     let start_btn = Button::new(t!("start"))
                         .on_press(Message::ClickStart(app.clone(), app_server.clone()));
-                    let start_tip = Text::new(start_tip_text);
-                    let progress_bar = ProgressBar::new(RangeInclusive::new(0.0, 100.0), 5.0);
 
-                    let app_server_c = Column::new()
-                        .push(description_panel)
-                        .push(start_btn)
-                        .push(start_tip)
-                        .push(progress_bar);
+                    let mut app_server_c = Column::new().push(description_panel).push(start_btn);
+                    match app_server.start_status {
+                        StartStatus::Wait => {}
+                        _ => {
+                            let start_tip = Text::new(app_server.start_status.description());
+                            let progress_bar =
+                                ProgressBar::new(RangeInclusive::new(0.0, 100.0), 5.0);
+                            app_server_c = app_server_c.push(start_tip).push(progress_bar);
+                        }
+                    }
                     app_servers_c = app_servers_c.push(app_server_c);
                 }
             }

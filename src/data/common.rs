@@ -1,3 +1,4 @@
+use crate::t;
 use crate::utils::hash::md5::md5_string;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -45,6 +46,7 @@ pub struct AppServer {
     pub address: Address,
     pub description: String,
     pub priority: i64,
+    pub start_status: StartStatus,
 }
 
 impl AppServer {
@@ -56,6 +58,7 @@ impl AppServer {
             address,
             description: description.to_string(),
             priority,
+            start_status: StartStatus::Wait,
         }
     }
 }
@@ -81,6 +84,7 @@ impl Address {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum StartStatus {
     Wait,
     StartHandle,
@@ -93,10 +97,10 @@ impl StartStatus {
     pub fn description(&self) -> &'static str {
         match self {
             StartStatus::Wait => "",
-            StartStatus::StartHandle => "开始处理",
-            StartStatus::CheckUpdate => "检查更新中",
-            StartStatus::Starting => "正在启动",
-            StartStatus::Started => "启动成功",
+            StartStatus::StartHandle => t!("start_status_start_processing"),
+            StartStatus::CheckUpdate => t!("start_status_check_update"),
+            StartStatus::Starting => t!("start_status_starting"),
+            StartStatus::Started => t!("start_status_started"),
         }
     }
 }

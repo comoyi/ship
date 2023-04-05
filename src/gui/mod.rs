@@ -1,7 +1,7 @@
 mod view;
 
 use crate::data::apps::App;
-use crate::data::common::{AppServer, AppServerInfo};
+use crate::data::common::{AppServer, AppServerInfo, StartStatus};
 use crate::data::core::AppDataPtr;
 use crate::data::page::{Pag, Page};
 use crate::i18n::DICTIONARY;
@@ -124,9 +124,16 @@ impl Application for Gui {
             }
             Message::ClickStart(app, app_server) => {
                 let mut app_data_g = self.flags.data.lock().unwrap();
-                // app_data_g.app_manager.apps
-                //     .get_mut(Box::leak(app.uid.into_boxed_str()))
-                //     .unwrap().app_server_info.servers.get(&app_server.uid).unwrap();
+                app_data_g
+                    .app_manager
+                    .apps
+                    .get_mut(Box::leak(app.uid.into_boxed_str()))
+                    .unwrap()
+                    .app_server_info
+                    .servers
+                    .get_mut(&app_server.uid)
+                    .unwrap()
+                    .start_status = StartStatus::StartHandle;
                 drop(app_data_g);
             }
             Message::SwitchLanguage => {
