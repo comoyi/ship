@@ -1,5 +1,6 @@
 mod view;
 
+use crate::data::apps::App;
 use crate::data::common::{AppServer, AppServerInfo, StartStatus};
 use crate::data::core::AppDataPtr;
 use crate::data::page::{Pag, Page};
@@ -55,7 +56,8 @@ pub enum Message {
     CloseModal,
     Noop,
     Test,
-    SelectAppServer(AppServer),
+    SelectApp(App),
+    SelectAppServer(App, AppServer),
     ClickStart,
     SwitchLanguage,
 
@@ -102,11 +104,22 @@ impl Application for Gui {
             Message::Noop => {}
             Message::Test => {
                 let gsi = AppServerInfo::test_data();
-                debug!("GServerInfo: {:?}", gsi);
+                debug!("AppServerInfo: {:?}", gsi);
             }
-            Message::SelectAppServer(app_server) => {
+            Message::SelectApp(app) => {
                 let mut app_data_g = self.flags.data.lock().unwrap();
-                // app_data_g.selected_g_server_uid = Some(app_server.uid.to_string());
+                app_data_g.app_manager.selected_app_uid = Some(app.uid);
+                drop(app_data_g);
+            }
+            Message::SelectAppServer(app, app_server) => {
+                let mut app_data_g = self.flags.data.lock().unwrap();
+                let k: &str = &app_server.uid.clone();
+                app_data_g
+                    .app_manager
+                    .apps
+                    .get_mut(Box::leak(app.uid.into_boxed_str()))
+                    .unwrap()
+                    .selected_app_server_uid = Some(app_server.uid);
                 drop(app_data_g);
             }
             Message::ClickStart => {

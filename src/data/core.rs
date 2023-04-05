@@ -7,8 +7,6 @@ use std::sync::{Arc, Mutex};
 pub type AppDataPtr = Arc<Mutex<AppData>>;
 
 pub struct AppData {
-    pub app_server_info: AppServerInfo,
-    pub selected_g_server_uid: Option<String>,
     pub start_status: StartStatus,
     pub settings: Settings,
     pub page_manager: PageManager,
@@ -18,8 +16,6 @@ pub struct AppData {
 impl Default for AppData {
     fn default() -> Self {
         Self {
-            app_server_info: AppServerInfo::test_data(),
-            selected_g_server_uid: None,
             start_status: StartStatus::Wait,
             settings: Settings {
                 data_dir: "".to_string(),

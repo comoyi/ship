@@ -36,8 +36,6 @@ pub fn start() {
     }
     let app_manager = AppManager::test_data();
     app_data.app_manager = app_manager;
-    let gsi = AppServerInfo::test_data();
-    app_data.app_server_info = gsi;
     let app_data_ptr = Arc::new(Mutex::new(app_data));
     let gui_flags = GuiFlags::new(&app_data_ptr);
     gui::start(gui_flags);

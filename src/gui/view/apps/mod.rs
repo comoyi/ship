@@ -14,12 +14,17 @@ impl Gui {
 
         let app_data_g = self.flags.data.lock().unwrap();
         for (_, app) in app_data_g.app_manager.apps.iter() {
-            let project_btn = Button::new(Text::new(app.name.clone()))
+            let mut app_btn = Button::new(Text::new(app.name.clone()))
                 .style(theme::Button::Secondary)
-                .on_press(Message::Noop);
-            tab_c = tab_c.push(project_btn);
-            let app_server_page = self.make_template_a_page(app);
-            content_c = content_c.push(app_server_page);
+                .on_press(Message::SelectApp(app.clone()));
+            if let Some(selected_app_uid) = &app_data_g.app_manager.selected_app_uid {
+                if &app.uid == selected_app_uid {
+                    app_btn = app_btn.style(theme::Button::Positive);
+                    let app_server_page = self.make_template_a_page(app);
+                    content_c = content_c.push(app_server_page);
+                }
+            }
+            tab_c = tab_c.push(app_btn);
         }
         drop(app_data_g);
 

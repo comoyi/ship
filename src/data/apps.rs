@@ -1,10 +1,7 @@
 use crate::data::common::{AppServer, AppServerInfo};
 use std::collections::HashMap;
 
-pub enum AppUid {
-    ProjectA,
-    ProjectB,
-}
+pub type AppUid = String;
 
 pub struct AppManager {
     pub selected_app_uid: Option<AppUid>,
@@ -15,21 +12,21 @@ impl AppManager {
     pub fn test_data() -> AppManager {
         let mut apps = Apps::new();
         let app_1 = App {
-            uid: AppUid::ProjectA,
+            uid: "Project-A".to_string(),
             name: "App-A".to_string(),
             app_server_info: AppServerInfo::test_data(),
             selected_app_server_uid: None,
         };
-        apps.insert("AAA", app_1);
+        apps.insert(Box::leak(app_1.uid.clone().into_boxed_str()), app_1);
         let app_2 = App {
-            uid: AppUid::ProjectB,
+            uid: "Project-B".to_string(),
             name: "App-B".to_string(),
             app_server_info: AppServerInfo {
                 servers: Default::default(),
             },
             selected_app_server_uid: None,
         };
-        apps.insert("BBB", app_2);
+        apps.insert(Box::leak(app_2.uid.clone().into_boxed_str()), app_2);
         AppManager {
             selected_app_uid: None,
             apps: apps,
@@ -39,6 +36,7 @@ impl AppManager {
 
 pub type Apps = HashMap<&'static str, App>;
 
+#[derive(Debug, Clone)]
 pub struct App {
     pub uid: AppUid,
     pub name: String,
