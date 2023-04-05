@@ -3,10 +3,10 @@ use crate::data::common::GServerInfo;
 use crate::data::core::AppData;
 use crate::gui;
 use crate::gui::GuiFlags;
+use crate::i18n::DICTIONARY;
 use crate::log::init_log;
 use crate::utils::filepath;
-use log::{debug, warn};
-use std::env::current_exe;
+use log::warn;
 use std::sync::{Arc, Mutex};
 
 pub const APP_NAME: &str = "Valheim Launcher";
@@ -17,6 +17,11 @@ pub fn start() {
     init_log();
 
     CONFIG.print_config();
+
+    let switch_language_r = DICTIONARY.switch_language_by_code(&CONFIG.language);
+    if let Err(e) = switch_language_r {
+        warn!("switch language failed, err: {}", e);
+    }
 
     let mut app_data = AppData::default();
     let data_dir_r = filepath::get_exe_dir();

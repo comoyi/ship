@@ -19,6 +19,7 @@ impl Default for AppData {
             start_status: StartStatus::Wait,
             settings: Settings {
                 data_dir: "".to_string(),
+                language: "".to_string(),
             },
         }
     }

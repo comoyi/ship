@@ -1,7 +1,7 @@
 use crate::gui::{Gui, Message};
 use crate::t;
+use iced::theme;
 use iced::widget::{Button, Container, Row};
-use iced::{theme, Renderer};
 
 impl Gui {
     pub fn make_nav_bar(&self) -> Container<'static, Message> {

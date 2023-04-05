@@ -13,6 +13,7 @@ lazy_static! {
 #[derive(Deserialize)]
 pub struct Config {
     pub log_level: String,
+    pub language: String,
     pub server: Server,
 }
 

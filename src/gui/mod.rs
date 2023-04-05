@@ -4,7 +4,7 @@ use crate::data::common::{GServer, GServerInfo, StartStatus};
 use crate::data::core::AppDataPtr;
 use crate::gui::view::menubar::make_menubar;
 use crate::i18n::DICTIONARY;
-use crate::{app, requests, t, version};
+use crate::{app, t, version};
 use iced::widget::{Button, Column, Container, Text, TextInput};
 use iced::window::Icon;
 use iced::{window, Application, Command, Element, Padding, Renderer, Settings};
@@ -112,7 +112,7 @@ impl Application for Gui {
                 drop(app_data_g);
             }
             Message::SwitchLanguage => {
-                DICTIONARY.switch_language();
+                DICTIONARY.toggle_language();
             }
         }
         Command::none()
@@ -136,12 +136,9 @@ impl Application for Gui {
         .backdrop(Message::CloseModal)
         .on_esc(Message::CloseModal);
 
-        let app_data_g = self.flags.data.lock().unwrap();
-        let base_dir_input = TextInput::new("", &app_data_g.settings.data_dir, |_s| -> Message {
-            Message::Noop
-        });
-        drop(app_data_g);
         let gs_container = self.make_server_panel();
+
+        let settings_page = self.make_settings_page();
 
         let test_btn = Button::new("Test").on_press(Message::Test);
 
@@ -151,7 +148,7 @@ impl Application for Gui {
         }
         mc = mc
             .push(navbar)
-            .push(base_dir_input)
+            .push(settings_page)
             .push(test_btn)
             .push(gs_container);
         let c = Container::new(mc).padding(DEFAULT_PADDING);

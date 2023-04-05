@@ -1,34 +1,14 @@
+use crate::data::i18n::Language;
 use lazy_static::lazy_static;
 use log::Level::{Debug, Trace};
 use log::{debug, log_enabled, trace, warn};
 use std::collections::HashMap;
-use std::fs;
 use std::string::ToString;
 lazy_static! {
     pub static ref DICTIONARY: Dictionary = Dictionary::new_and_init();
 }
 
-pub static mut SELECTED_LANGUAGE: Language = Language::EnUs;
-
-pub enum Language {
-    EnUs,
-    ZhCn,
-    JaJp,
-}
-
-impl Language {
-    fn default_language() -> Self {
-        Language::EnUs
-    }
-
-    fn code(&self) -> &'static str {
-        match self {
-            Language::EnUs => "en_US",
-            Language::ZhCn => "zh_CN",
-            Language::JaJp => "ja_JP",
-        }
-    }
-}
+static mut SELECTED_LANGUAGE: Language = Language::EnUs;
 
 #[macro_export]
 macro_rules! t {
@@ -51,7 +31,7 @@ impl Dictionary {
     pub fn new_and_init() -> Self {
         debug!("init dict");
         let mut me = Self::default();
-        me.languages = vec![Language::EnUs, Language::ZhCn, Language::JaJp];
+        me.languages = Language::get_all_languages();
         let dict = read_languages(&me.languages);
         debug!("dict: {:?}", dict);
         me.dict = dict;
@@ -110,7 +90,25 @@ impl Dictionary {
         warn!("[i18n]not hit any dict key, k: {:20}", s);
         s
     }
-    pub fn switch_language(&self) {
+
+    pub fn switch_language_by_code(&self, language_code: &str) -> Result<(), &str> {
+        let l_r = Language::try_from(language_code);
+        return match l_r {
+            Ok(l) => {
+                self.switch_language(l);
+                Ok(())
+            }
+            Err(e) => Err(e),
+        };
+    }
+
+    pub fn switch_language(&self, l: Language) {
+        unsafe {
+            SELECTED_LANGUAGE = l;
+        }
+    }
+
+    pub fn toggle_language(&self) {
         unsafe {
             match SELECTED_LANGUAGE {
                 Language::EnUs => {
