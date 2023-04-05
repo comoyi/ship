@@ -7,7 +7,7 @@ use iced_aw::Card;
 use std::ops::RangeInclusive;
 
 impl Gui {
-    pub fn make_server_panel(&self) -> Container<'static, Message, Renderer> {
+    pub fn make_server_page(&self) -> Container<'static, Message, Renderer> {
         let mut c2 = Row::new();
         let mut gs_list_container = Column::new();
 

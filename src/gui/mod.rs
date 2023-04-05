@@ -2,7 +2,7 @@ mod view;
 
 use crate::data::common::{GServer, GServerInfo, StartStatus};
 use crate::data::core::AppDataPtr;
-use crate::gui::view::menubar::make_menubar;
+use crate::data::page::{Pag, Page};
 use crate::i18n::DICTIONARY;
 use crate::{app, t, version};
 use iced::widget::{Button, Column, Container, Text, TextInput};
@@ -57,6 +57,8 @@ pub enum Message {
     SelectGServer(GServer),
     ClickStart,
     SwitchLanguage,
+
+    GoToPage(Pag),
 }
 
 impl Application for Gui {
@@ -114,12 +116,16 @@ impl Application for Gui {
             Message::SwitchLanguage => {
                 DICTIONARY.toggle_language();
             }
+            Message::GoToPage(p) => {
+                let mut app_data_g = self.flags.data.lock().unwrap();
+                app_data_g.page_manager.current_page = p;
+                drop(app_data_g);
+            }
         }
         Command::none()
     }
 
     fn view(&self) -> Element<'_, Self::Message, Renderer<Self::Theme>> {
-        let menubar = make_menubar();
         let navbar = self.make_nav_bar();
         let about_modal = Modal::new(self.show_modal, "", || {
             Card::new(
@@ -136,22 +142,40 @@ impl Application for Gui {
         .backdrop(Message::CloseModal)
         .on_esc(Message::CloseModal);
 
-        let gs_container = self.make_server_panel();
-
-        let settings_page = self.make_settings_page();
-
-        let test_btn = Button::new("Test").on_press(Message::Test);
-
         let mut mc = Column::new().push(about_modal);
         if self.show_menubar {
+            let menubar = self.make_m_bar();
             mc = mc.push(menubar);
         }
-        mc = mc
-            .push(navbar)
-            .push(settings_page)
-            .push(test_btn)
-            .push(gs_container);
-        let c = Container::new(mc).padding(DEFAULT_PADDING);
+        mc = mc.push(navbar);
+
+        let app_data_g = self.flags.data.lock().unwrap();
+        let current_page = app_data_g.page_manager.current_page.clone();
+        drop(app_data_g);
+        match current_page {
+            Pag::Home => {
+                let page = self.make_home_page();
+                mc = mc.push(page)
+            }
+            Pag::Settings => {
+                let page = self.make_settings_page();
+                mc = mc.push(page);
+            }
+            Pag::GServer => {
+                let page = self.make_server_page();
+                mc = mc.push(page);
+            }
+            Pag::Help => {
+                let page = self.make_help_page();
+                mc = mc.push(page)
+            }
+            Pag::Debug => {
+                let page = self.make_debug_page();
+                mc = mc.push(page)
+            }
+        }
+
+        let c = Container::new(mc);
         c.into()
     }
 }
