@@ -12,12 +12,12 @@ use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::thread;
 use std::time::Duration;
 
-enum ControlMessage {
+enum LaunchControlMessage {
     Start,
     Stop,
 }
 
-enum TaskMessage {
+enum TaskEventMessage {
     Start,
     Progress(common::Progress),
     Stopped,
@@ -64,40 +64,46 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
     }
     debug!("Launch app, dir: {}, app_server: {:?}", dir, app_server);
 
-    let (tx, rx) = mpsc::channel::<ControlMessage>();
-    let (tx_task, rx_task) = mpsc::channel::<TaskMessage>();
+    // TODO scan client file info
 
-    thread::spawn(move || {
-        start_tasks(rx, tx_task);
-    });
+    // TODO get server file info
 
-    let app_copy = app.clone();
-    let app_server_copy = app_server.clone();
-    thread::spawn(move || {
-        watch_task(app_data_ptr, &app_copy, &app_server_copy, rx_task);
-    });
+    // TODO diff file info
 
-    tx.send(ControlMessage::Start).unwrap();
-
-    // thread::spawn(move || {
-    //     thread::sleep(Duration::from_secs(1));
-    //     let _ = tx.send(ControlMessage::Stop);
-    //     debug!("send ControlMessage::Stop");
-    // });
-}
-
-fn start_tasks(rx: Receiver<ControlMessage>, tx_task: Sender<TaskMessage>) {
+    // TODO use task channel
     let mut tasks = vec![];
     for i in 0..1000 {
         tasks.push(SyncTask {
             relative_file_path: format!("foo/bar/file-{}", i),
         });
     }
+
+    let (launch_control_tx, launch_control_rx) = mpsc::channel::<LaunchControlMessage>();
+    let (task_event_tx, task_event_rx) = mpsc::channel::<TaskEventMessage>();
+
+    thread::spawn(move || {
+        start_tasks(tasks, launch_control_rx, task_event_tx);
+    });
+
+    let app_copy = app.clone();
+    let app_server_copy = app_server.clone();
+    thread::spawn(move || {
+        watch_task(app_data_ptr, &app_copy, &app_server_copy, task_event_rx);
+    });
+
+    launch_control_tx.send(LaunchControlMessage::Start).unwrap();
+}
+
+fn start_tasks(
+    tasks: Vec<SyncTask>,
+    launch_control_rx: Receiver<LaunchControlMessage>,
+    task_event_tx: Sender<TaskEventMessage>,
+) {
     loop {
-        let m_r = rx.recv();
+        let m_r = launch_control_rx.recv();
         match m_r {
             Ok(m) => match m {
-                ControlMessage::Start => {
+                LaunchControlMessage::Start => {
                     debug!("recv ControlMessage::Start");
                     break;
                 }
@@ -107,16 +113,16 @@ fn start_tasks(rx: Receiver<ControlMessage>, tx_task: Sender<TaskMessage>) {
         }
     }
     for (index, task) in tasks.iter().enumerate() {
-        let m_r = rx.try_recv();
+        let m_r = launch_control_rx.try_recv();
         match m_r {
             Ok(m) => match m {
-                ControlMessage::Stop => {
+                LaunchControlMessage::Stop => {
                     debug!("recv ControlMessage::Stop");
 
                     // stop task
                     thread::sleep(Duration::from_secs(1));
 
-                    tx_task.send(TaskMessage::Stopped).unwrap();
+                    task_event_tx.send(TaskEventMessage::Stopped).unwrap();
                     return;
                 }
                 _ => {}
@@ -127,8 +133,8 @@ fn start_tasks(rx: Receiver<ControlMessage>, tx_task: Sender<TaskMessage>) {
         }
 
         // handle task
-        tx_task
-            .send(TaskMessage::Progress(common::Progress {
+        task_event_tx
+            .send(TaskEventMessage::Progress(common::Progress {
                 v: index,
                 total: tasks.len(),
                 task: task.clone(),
@@ -137,25 +143,25 @@ fn start_tasks(rx: Receiver<ControlMessage>, tx_task: Sender<TaskMessage>) {
         thread::sleep(Duration::from_millis(10));
     }
 
-    tx_task.send(TaskMessage::Done).unwrap();
+    task_event_tx.send(TaskEventMessage::Done).unwrap();
 }
 
 fn watch_task(
     app_data_ptr: AppDataPtr,
     app: &App,
     app_server: &AppServer,
-    rx_task: Receiver<TaskMessage>,
+    task_event_rx: Receiver<TaskEventMessage>,
 ) {
     loop {
-        let task_message_r = rx_task.recv();
+        let task_message_r = task_event_rx.recv();
         match task_message_r {
             Ok(m) => {
                 let mut app_data_g = app_data_ptr.lock().unwrap();
                 match m {
-                    TaskMessage::Start => {
+                    TaskEventMessage::Start => {
                         debug!("TaskMessage::Start");
                     }
-                    TaskMessage::Progress(p) => {
+                    TaskEventMessage::Progress(p) => {
                         debug!("TaskMessage::Progress");
                         app_data_g
                             .app_manager
@@ -168,7 +174,7 @@ fn watch_task(
                             .unwrap()
                             .start_status = StartStatus::Updating(p);
                     }
-                    TaskMessage::Stopped => {
+                    TaskEventMessage::Stopped => {
                         debug!("TaskMessage::Stopped ");
                         app_data_g
                             .app_manager
@@ -182,7 +188,7 @@ fn watch_task(
                             .start_status = StartStatus::Cancelled;
                         break;
                     }
-                    TaskMessage::Failed => {
+                    TaskEventMessage::Failed => {
                         debug!("TaskMessage::Failed ");
                         app_data_g
                             .app_manager
@@ -197,7 +203,7 @@ fn watch_task(
 
                         break;
                     }
-                    TaskMessage::Done => {
+                    TaskEventMessage::Done => {
                         debug!("TaskMessage::Done ");
                         app_data_g
                             .app_manager
