@@ -7,7 +7,7 @@ impl Gui {
     pub fn make_settings_page(&self) -> Container<'static, Message> {
         let data_dir_label = Text::new(t!("data_dir"));
         let app_data_g = self.flags.data.lock().unwrap();
-        let data_dir_input = TextInput::new("", &app_data_g.settings.data_dir, |_s| -> Message {
+        let data_dir_input = TextInput::new("", &app_data_g.settings.data_dir, |_| -> Message {
             Message::Noop
         });
         drop(app_data_g);

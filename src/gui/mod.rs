@@ -103,8 +103,8 @@ impl Application for Gui {
             }
             Message::Noop => {}
             Message::Test => {
-                let gsi = AppServerInfo::test_data();
-                debug!("AppServerInfo: {:?}", gsi);
+                let app_server_info = AppServerInfo::test_data();
+                debug!("AppServerInfo: {:?}", app_server_info);
             }
             Message::SelectApp(app) => {
                 let mut app_data_g = self.flags.data.lock().unwrap();
