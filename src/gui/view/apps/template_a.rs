@@ -63,7 +63,8 @@ impl Gui {
 
                                     let progress_bar =
                                         ProgressBar::new(RangeInclusive::new(0.0, total), v);
-                                    app_server_c = app_server_c.push(progress_bar);
+                                    let task_info = Text::new(p.task.relative_file_path.clone());
+                                    app_server_c = app_server_c.push(progress_bar).push(task_info);
                                 }
                                 _ => {}
                             }

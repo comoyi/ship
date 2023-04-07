@@ -1,6 +1,6 @@
 use crate::data::apps::App;
 use crate::data::common;
-use crate::data::common::{AppServer, StartStatus};
+use crate::data::common::{AppServer, StartStatus, SyncTask};
 use crate::data::core::AppDataPtr;
 use crate::utils::filepath;
 use image::Progress;
@@ -89,7 +89,9 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
 fn start_tasks(rx: Receiver<ControlMessage>, tx_task: Sender<TaskMessage>) {
     let mut tasks = vec![];
     for i in 0..1000 {
-        tasks.push(i);
+        tasks.push(SyncTask {
+            relative_file_path: format!("foo/bar/file-{}", i),
+        });
     }
     loop {
         let m_r = rx.recv();
@@ -125,13 +127,14 @@ fn start_tasks(rx: Receiver<ControlMessage>, tx_task: Sender<TaskMessage>) {
         }
 
         // handle task
-        thread::sleep(Duration::from_millis(100));
         tx_task
             .send(TaskMessage::Progress(common::Progress {
                 v: index,
                 total: tasks.len(),
+                task: task.clone(),
             }))
             .unwrap();
+        thread::sleep(Duration::from_millis(10));
     }
 
     tx_task.send(TaskMessage::Done).unwrap();

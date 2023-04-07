@@ -198,4 +198,10 @@ impl Default for ClientFileInfo {
 pub struct Progress {
     pub v: usize,
     pub total: usize,
+    pub task: SyncTask,
+}
+
+#[derive(Debug, Clone)]
+pub struct SyncTask {
+    pub relative_file_path: String,
 }
