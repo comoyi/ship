@@ -89,8 +89,12 @@ pub enum StartStatus {
     Wait,
     StartHandle,
     CheckUpdate,
+    Updating(Progress),
+    UpdateCompleted,
     Starting,
     Started,
+    Cancelled,
+    Failed,
 }
 
 impl StartStatus {
@@ -99,8 +103,20 @@ impl StartStatus {
             StartStatus::Wait => "",
             StartStatus::StartHandle => t!("start_status_start_processing"),
             StartStatus::CheckUpdate => t!("start_status_check_update"),
+            StartStatus::Updating(p) => Box::leak(
+                format!("{} {}/{}", t!("start_status_updating"), p.v, p.total).into_boxed_str(),
+            ),
+            StartStatus::UpdateCompleted => {
+                t!("start_status_update_completed")
+            }
             StartStatus::Starting => t!("start_status_starting"),
             StartStatus::Started => t!("start_status_started"),
+            StartStatus::Cancelled => {
+                t!("start_status_cancelled")
+            }
+            StartStatus::Failed => {
+                t!("start_status_failed")
+            }
         }
     }
 }
@@ -176,4 +192,10 @@ impl Default for ClientFileInfo {
             files: vec![],
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct Progress {
+    pub v: usize,
+    pub total: usize,
 }

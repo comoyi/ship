@@ -1,3 +1,5 @@
+pub mod launch;
+
 use crate::config::CONFIG;
 use crate::data::apps::AppManager;
 use crate::data::common::AppServerInfo;

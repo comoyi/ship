@@ -1,5 +1,6 @@
 mod view;
 
+use crate::app::launch;
 use crate::data::apps::App;
 use crate::data::common::{AppServer, AppServerInfo, StartStatus};
 use crate::data::core::AppDataPtr;
@@ -8,12 +9,16 @@ use crate::i18n::DICTIONARY;
 use crate::{app, t, version};
 use iced::widget::{Button, Column, Container, Text, TextInput};
 use iced::window::Icon;
-use iced::{window, Application, Command, Element, Padding, Renderer, Settings};
+use iced::{
+    subscription, window, Application, Command, Element, Padding, Renderer, Settings, Subscription,
+};
 use iced_aw::{Card, Modal};
 use image::ImageFormat;
-use log::{debug, info};
+use log::{debug, info, trace};
 use std::process::exit;
 use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
 const DEFAULT_PADDING: Padding = Padding::new(10.0);
 const DEFAULT_SPACING: f32 = 10.0;
@@ -127,7 +132,7 @@ impl Application for Gui {
                 app_data_g
                     .app_manager
                     .apps
-                    .get_mut(Box::leak(app.uid.into_boxed_str()))
+                    .get_mut(Box::leak(app.uid.clone().into_boxed_str()))
                     .unwrap()
                     .app_server_info
                     .servers
@@ -135,6 +140,7 @@ impl Application for Gui {
                     .unwrap()
                     .start_status = StartStatus::StartHandle;
                 drop(app_data_g);
+                launch::launch(Arc::clone(&self.flags.data), &app, &app_server);
             }
             Message::SwitchLanguage => {
                 DICTIONARY.toggle_language();
@@ -200,6 +206,28 @@ impl Application for Gui {
 
         let c = Container::new(mc);
         c.into()
+    }
+
+    fn subscription(&self) -> Subscription<Self::Message> {
+        trace!("subscript");
+        Subscription::batch(
+            vec![SubscriptionEvent::RefreshUi]
+                .iter()
+                .map(SubscriptionEvent::s),
+        )
+    }
+}
+
+enum SubscriptionEvent {
+    RefreshUi,
+}
+
+impl SubscriptionEvent {
+    fn s(&self) -> Subscription<Message> {
+        subscription::unfold("1", "InitData", |_| async {
+            thread::sleep(Duration::from_millis(200));
+            (Some(Message::Noop), "NewData")
+        })
     }
 }
 

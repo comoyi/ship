@@ -52,9 +52,21 @@ impl Gui {
                         StartStatus::Wait => {}
                         _ => {
                             let start_tip = Text::new(app_server.start_status.description());
-                            let progress_bar =
-                                ProgressBar::new(RangeInclusive::new(0.0, 100.0), 5.0);
-                            app_server_c = app_server_c.push(start_tip).push(progress_bar);
+                            app_server_c = app_server_c.push(start_tip);
+
+                            let mut total = 0.0;
+                            let mut v = 0.0;
+                            match &app_server.start_status {
+                                StartStatus::Updating(p) => {
+                                    v = p.v as f32;
+                                    total = p.total as f32;
+
+                                    let progress_bar =
+                                        ProgressBar::new(RangeInclusive::new(0.0, total), v);
+                                    app_server_c = app_server_c.push(progress_bar);
+                                }
+                                _ => {}
+                            }
                         }
                     }
                     app_servers_c = app_servers_c.push(app_server_c);
