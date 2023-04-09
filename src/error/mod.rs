@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum Error {
     QueryError,
     ReadBodyError,
@@ -8,6 +9,7 @@ pub enum Error {
     GetServerFileInfoError,
     DeserializeServerFileInfoError,
     ScanError,
+    ScanPathNotExitError,
     GetClientFileInfoError,
     CalcHashError,
 }

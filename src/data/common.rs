@@ -194,6 +194,14 @@ impl Default for ClientFileInfo {
     }
 }
 
+#[derive(Deserialize, Debug)]
+pub struct ServerFileInfo {
+    #[serde(rename = "status")]
+    pub scan_status: ScanStatus,
+    pub last_scan_finish_time: i64,
+    pub files: Vec<FileInfo>,
+}
+
 #[derive(Debug, Clone)]
 pub struct Progress {
     pub v: usize,
@@ -204,4 +212,21 @@ pub struct Progress {
 #[derive(Debug, Clone)]
 pub struct SyncTask {
     pub relative_file_path: String,
+    pub sync_type: SyncTaskType,
+}
+
+impl SyncTask {
+    pub fn new(relative_file_path: &str, sync_type: SyncTaskType) -> Self {
+        Self {
+            relative_file_path: relative_file_path.to_string(),
+            sync_type,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum SyncTaskType {
+    Create,
+    Update,
+    Delete,
 }

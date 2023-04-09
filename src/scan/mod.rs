@@ -6,6 +6,10 @@ use log::{debug, warn};
 use std::path::Path;
 
 pub fn scan(base_path: &str) -> Result<ClientFileInfo, Error> {
+    let p = Path::new(base_path);
+    if !p.exists() {
+        return Err(Error::ScanPathNotExitError);
+    }
     let mut files: Vec<FileInfo> = vec![];
 
     debug!("{}", "scan start");

@@ -1,44 +1,7 @@
-use crate::data::common::AppServer;
+use crate::data::common::{AppServer, ServerFileInfo};
 use crate::error::Error;
 use crate::requests::get_full_url_by_server;
 use log::debug;
-use serde::Deserialize;
-use serde_repr::Deserialize_repr;
-
-#[derive(Deserialize, Debug)]
-pub struct ServerFileInfo {
-    #[serde(rename = "status")]
-    pub scan_status: ScanStatus,
-    pub last_scan_finish_time: i64,
-    pub files: Vec<FileInfo>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct FileInfo {
-    pub relative_path: String,
-    #[serde(rename = "type")]
-    pub file_type: FileType,
-    pub size: u64,
-    pub hash: String,
-}
-
-#[derive(Deserialize_repr, Debug)]
-#[repr(i8)]
-pub enum ScanStatus {
-    Wait = 10,
-    Scanning = 20,
-    Failed = 30,
-    Completed = 40,
-}
-
-#[derive(Deserialize_repr, Debug)]
-#[repr(i8)]
-pub enum FileType {
-    Unknown = 0,
-    File = 1,
-    Dir = 2,
-    Symlink = 4,
-}
 
 pub fn get_file_info(server: &AppServer) -> Result<ServerFileInfo, Error> {
     debug!("get_file_info");
