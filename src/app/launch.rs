@@ -1,3 +1,6 @@
+mod start;
+mod update;
+
 use crate::data::apps::App;
 use crate::data::common;
 use crate::data::common::{
@@ -10,10 +13,15 @@ use image::Progress;
 use log::{debug, trace};
 use std::error::Error;
 use std::path::Path;
-use std::sync::mpsc::{Receiver, Sender, TryRecvError};
+use std::sync::mpsc::{Receiver, RecvError, Sender, TryRecvError};
 use std::sync::{mpsc, Arc};
 use std::thread;
 use std::time::Duration;
+
+enum LaunchMessage {
+    UpdateCompleted,
+    StartCompleted,
+}
 
 enum LaunchControlMessage {
     Start,
@@ -127,6 +135,7 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
         ));
     }
 
+    let (launch_tx, launch_rx) = mpsc::channel::<LaunchMessage>();
     let (launch_control_tx, launch_control_rx) = mpsc::channel::<LaunchControlMessage>();
     let (task_event_tx, task_event_rx) = mpsc::channel::<TaskEventMessage>();
 
@@ -136,8 +145,30 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
 
     let app_copy = app.clone();
     let app_server_copy = app_server.clone();
+    let app_data_ptr_copy = Arc::clone(&app_data_ptr);
+    let launch_tx_1 = launch_tx.clone();
     thread::spawn(move || {
-        watch_task(app_data_ptr, &app_copy, &app_server_copy, task_event_rx);
+        watch_task(
+            app_data_ptr_copy,
+            &app_copy,
+            &app_server_copy,
+            task_event_rx,
+            launch_tx_1,
+        );
+    });
+
+    let app_copy_2 = app.clone();
+    let app_server_copy_2 = app_server.clone();
+    let app_data_ptr_copy_2 = Arc::clone(&app_data_ptr);
+    let launch_tx_2 = launch_tx.clone();
+    thread::spawn(move || {
+        watch_launch(
+            app_data_ptr_copy_2,
+            &app_copy_2,
+            &app_server_copy_2,
+            launch_rx,
+            launch_tx_2,
+        );
     });
 
     launch_control_tx.send(LaunchControlMessage::Start).unwrap();
@@ -200,76 +231,57 @@ fn watch_task(
     app: &App,
     app_server: &AppServer,
     task_event_rx: Receiver<TaskEventMessage>,
+    launch_tx: Sender<LaunchMessage>,
 ) {
     loop {
         let task_message_r = task_event_rx.recv();
         match task_message_r {
-            Ok(m) => {
-                let mut app_data_g = app_data_ptr.lock().unwrap();
-                match m {
-                    TaskEventMessage::Start => {
-                        debug!("TaskMessage::Start");
-                    }
-                    TaskEventMessage::Progress(p) => {
-                        trace!("TaskMessage::Progress, {:?}", p);
-                        app_data_g
-                            .app_manager
-                            .apps
-                            .get_mut(Box::leak(app.uid.clone().into_boxed_str()))
-                            .unwrap()
-                            .app_server_info
-                            .servers
-                            .get_mut(&app_server.uid)
-                            .unwrap()
-                            .start_status = StartStatus::Updating(p);
-                    }
-                    TaskEventMessage::Stopped => {
-                        debug!("TaskMessage::Stopped ");
-                        app_data_g
-                            .app_manager
-                            .apps
-                            .get_mut(Box::leak(app.uid.clone().into_boxed_str()))
-                            .unwrap()
-                            .app_server_info
-                            .servers
-                            .get_mut(&app_server.uid)
-                            .unwrap()
-                            .start_status = StartStatus::Cancelled;
-                        break;
-                    }
-                    TaskEventMessage::Failed => {
-                        debug!("TaskMessage::Failed ");
-                        app_data_g
-                            .app_manager
-                            .apps
-                            .get_mut(Box::leak(app.uid.clone().into_boxed_str()))
-                            .unwrap()
-                            .app_server_info
-                            .servers
-                            .get_mut(&app_server.uid)
-                            .unwrap()
-                            .start_status = StartStatus::Failed;
-
-                        break;
-                    }
-                    TaskEventMessage::Done => {
-                        debug!("TaskMessage::Done ");
-                        app_data_g
-                            .app_manager
-                            .apps
-                            .get_mut(Box::leak(app.uid.clone().into_boxed_str()))
-                            .unwrap()
-                            .app_server_info
-                            .servers
-                            .get_mut(&app_server.uid)
-                            .unwrap()
-                            .start_status = StartStatus::UpdateCompleted;
-                        break;
-                    }
+            Ok(m) => match m {
+                TaskEventMessage::Start => {
+                    debug!("TaskMessage::Start");
                 }
+                TaskEventMessage::Progress(p) => {
+                    trace!("TaskMessage::Progress, {:?}", p);
+                    set_launch_status(
+                        Arc::clone(&app_data_ptr),
+                        app,
+                        app_server,
+                        StartStatus::Updating(p),
+                    );
+                }
+                TaskEventMessage::Stopped => {
+                    debug!("TaskMessage::Stopped ");
+                    set_launch_status(
+                        Arc::clone(&app_data_ptr),
+                        app,
+                        app_server,
+                        StartStatus::Cancelled,
+                    );
+                    break;
+                }
+                TaskEventMessage::Failed => {
+                    debug!("TaskMessage::Failed ");
+                    set_launch_status(
+                        Arc::clone(&app_data_ptr),
+                        app,
+                        app_server,
+                        StartStatus::Failed,
+                    );
 
-                drop(app_data_g);
-            }
+                    break;
+                }
+                TaskEventMessage::Done => {
+                    debug!("TaskMessage::Done ");
+                    set_launch_status(
+                        Arc::clone(&app_data_ptr),
+                        app,
+                        app_server,
+                        StartStatus::UpdateCompleted,
+                    );
+                    launch_tx.send(LaunchMessage::UpdateCompleted);
+                    break;
+                }
+            },
             Err(_) => {
                 debug!("recv TaskMessage Err");
             }
@@ -278,14 +290,66 @@ fn watch_task(
     }
 }
 
-fn check_update() {}
+fn watch_launch(
+    app_data_ptr: AppDataPtr,
+    app: &App,
+    app_server: &AppServer,
+    launch_rx: Receiver<LaunchMessage>,
+    launch_tx: Sender<LaunchMessage>,
+) {
+    loop {
+        let launch_message_r = launch_rx.recv();
+        match launch_message_r {
+            Ok(launch_message) => match launch_message {
+                LaunchMessage::UpdateCompleted => {
+                    launch_app(
+                        Arc::clone(&app_data_ptr),
+                        app,
+                        app_server,
+                        launch_tx.clone(),
+                    );
+                }
+                LaunchMessage::StartCompleted => {
+                    debug!("Start completed");
+                    return;
+                }
+            },
+            Err(_) => {
+                // debug!("recv LaunchMessage Err");
+            }
+        }
+    }
+}
 
 fn handle_task(task: &SyncTask) {
     debug!("handel task: {:?}", task);
     thread::sleep(Duration::from_millis(1000));
 }
 
-fn launch_app() {}
+fn launch_app(
+    app_data_ptr: AppDataPtr,
+    app: &App,
+    app_server: &AppServer,
+    launch_tx: Sender<LaunchMessage>,
+) {
+    debug!("Launch app");
+    set_launch_status(
+        Arc::clone(&app_data_ptr),
+        app,
+        app_server,
+        StartStatus::Starting,
+    );
+
+    thread::sleep(Duration::from_millis(1000));
+
+    set_launch_status(
+        Arc::clone(&app_data_ptr),
+        app,
+        app_server,
+        StartStatus::Started,
+    );
+    launch_tx.send(LaunchMessage::StartCompleted);
+}
 
 fn set_launch_status(
     app_data_ptr: AppDataPtr,
