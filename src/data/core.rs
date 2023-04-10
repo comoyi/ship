@@ -15,10 +15,7 @@ pub struct AppData {
 impl Default for AppData {
     fn default() -> Self {
         Self {
-            settings: Settings {
-                data_dir: "".to_string(),
-                language: "".to_string(),
-            },
+            settings: Default::default(),
             page_manager: PageManager {
                 current_page: Pag::Apps,
                 pages: Default::default(),

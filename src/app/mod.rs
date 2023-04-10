@@ -10,6 +10,7 @@ use crate::i18n::DICTIONARY;
 use crate::log::init_log;
 use crate::utils::filepath;
 use log::warn;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 pub const APP_NAME: &str = "Launcher";
@@ -27,10 +28,12 @@ pub fn start() {
     }
 
     let mut app_data = AppData::default();
-    let data_dir_r = filepath::get_exe_dir();
-    match data_dir_r {
-        Ok(data_dir) => {
-            app_data.settings.data_dir = data_dir;
+    let program_dir_path_r = filepath::get_exe_dir();
+    match program_dir_path_r {
+        Ok(program_dir_path) => {
+            app_data.settings.program_dir_path = program_dir_path.clone();
+            let p = Path::new(&program_dir_path).join("data");
+            app_data.settings.data_dir_path = p.to_str().unwrap().to_string();
         }
         Err(e) => {
             panic!("err: {}", e);
