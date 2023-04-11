@@ -1,5 +1,5 @@
-use crate::t;
 use crate::utils::hash::md5::md5_string;
+use crate::{requests, t};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::collections::HashMap;
@@ -63,7 +63,7 @@ impl AppServer {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Address {
     pub protocol: String,
     pub host: String,
@@ -81,6 +81,16 @@ impl Address {
 
     pub fn to_address_string(&self) -> String {
         format!("{}://{}:{}", self.protocol, self.host, self.port)
+    }
+}
+
+impl From<&requests::get_info::Address> for Address {
+    fn from(value: &requests::get_info::Address) -> Self {
+        Self {
+            protocol: value.protocol.clone(),
+            host: value.host.clone(),
+            port: value.port,
+        }
     }
 }
 
@@ -211,15 +221,24 @@ pub struct Progress {
 
 #[derive(Debug, Clone)]
 pub struct SyncTask {
-    pub relative_file_path: String,
     pub sync_type: SyncTaskType,
+    pub file_info: FileInfo,
+    pub base_path: String,
+    pub data_nodes: Vec<DataNode>,
 }
 
 impl SyncTask {
-    pub fn new(relative_file_path: &str, sync_type: SyncTaskType) -> Self {
+    pub fn new(
+        file_info: FileInfo,
+        sync_type: SyncTaskType,
+        base_path: String,
+        data_nodes: Vec<DataNode>,
+    ) -> Self {
         Self {
-            relative_file_path: relative_file_path.to_string(),
             sync_type,
+            file_info,
+            base_path,
+            data_nodes,
         }
     }
 }
@@ -229,4 +248,19 @@ pub enum SyncTaskType {
     Create,
     Update,
     Delete,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct DataNode {
+    pub name: String,
+    pub address: Address,
+}
+
+impl From<&requests::get_info::DataNode> for DataNode {
+    fn from(value: &requests::get_info::DataNode) -> Self {
+        Self {
+            name: value.name.clone(),
+            address: Address::from(&value.address),
+        }
+    }
 }

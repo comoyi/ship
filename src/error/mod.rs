@@ -13,3 +13,5 @@ pub enum Error {
     GetClientFileInfoError,
     CalcHashError,
 }
+
+pub enum SyncError {}

@@ -1,7 +1,7 @@
 use crate::config::CONFIG;
 
 mod get_file_info;
-mod get_info;
+pub mod get_info;
 
 use crate::data::common::AppServer;
 pub use get_file_info::get_file_info;

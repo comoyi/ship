@@ -4,9 +4,11 @@ mod update;
 use crate::data::apps::App;
 use crate::data::common;
 use crate::data::common::{
-    AppServer, ClientFileInfo, FileInfo, ServerFileInfo, StartStatus, SyncTask, SyncTaskType,
+    AppServer, ClientFileInfo, DataNode, FileInfo, ServerFileInfo, StartStatus, SyncTask,
+    SyncTaskType,
 };
 use crate::data::core::AppDataPtr;
+use crate::error::SyncError;
 use crate::utils::filepath;
 use crate::{error, requests, scan};
 use image::Progress;
@@ -114,24 +116,51 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
     );
     print_diff_detail(&sfi, &cfi, &added_files, &changed_files, &deleted_files);
 
+    let base_path = dir.to_string();
+    let data_nodes: Vec<DataNode>;
+    let app_server_info_r = requests::get_info(app_server);
+    match app_server_info_r {
+        Ok(app_server_info) => {
+            data_nodes = app_server_info
+                .data_nodes
+                .iter()
+                .map(|x| DataNode::from(x))
+                .collect();
+        }
+        Err(_) => {
+            set_launch_status(
+                Arc::clone(&app_data_ptr),
+                app,
+                app_server,
+                StartStatus::Failed,
+            );
+            return;
+        }
+    }
     // use task channel
     let mut tasks = vec![];
     for fi in added_files {
         tasks.push(SyncTask::new(
-            fi.relative_path.as_str(),
+            fi,
             SyncTaskType::Create,
+            base_path.clone(),
+            data_nodes.clone(),
         ));
     }
     for fi in changed_files {
         tasks.push(SyncTask::new(
-            fi.relative_path.as_str(),
+            fi,
             SyncTaskType::Update,
+            base_path.clone(),
+            data_nodes.clone(),
         ));
     }
     for fi in deleted_files {
         tasks.push(SyncTask::new(
-            fi.relative_path.as_str(),
+            fi,
             SyncTaskType::Delete,
+            base_path.clone(),
+            data_nodes.clone(),
         ));
     }
 
@@ -321,9 +350,18 @@ fn watch_launch(
     }
 }
 
-fn handle_task(task: &SyncTask) {
+fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
     debug!("handel task: {:?}", task);
     thread::sleep(Duration::from_millis(1000));
+    match task.sync_type {
+        SyncTaskType::Create | SyncTaskType::Update => {
+            debug!("will sync, file_info: {:?}", task.file_info);
+        }
+        SyncTaskType::Delete => {
+            debug!("will delete, file_info: {:?}", task.file_info);
+        }
+    }
+    Ok(())
 }
 
 fn launch_app(

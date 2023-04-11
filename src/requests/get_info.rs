@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct Info {
-    data_nodes: Vec<DataNode>,
+    pub data_nodes: Vec<DataNode>,
 }
 
 #[derive(Deserialize, Debug)]
