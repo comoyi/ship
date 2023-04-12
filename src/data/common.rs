@@ -140,7 +140,7 @@ pub enum ScanStatus {
     Completed = 40,
 }
 
-#[derive(Serialize_repr, Deserialize_repr, Debug, Clone)]
+#[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Clone)]
 #[repr(i8)]
 pub enum FileType {
     Unknown = 0,

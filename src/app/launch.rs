@@ -4,7 +4,7 @@ mod update;
 use crate::data::apps::App;
 use crate::data::common;
 use crate::data::common::{
-    AppServer, ClientFileInfo, DataNode, FileInfo, ServerFileInfo, StartStatus, SyncTask,
+    AppServer, ClientFileInfo, DataNode, FileInfo, FileType, ServerFileInfo, StartStatus, SyncTask,
     SyncTaskType,
 };
 use crate::data::core::AppDataPtr;
@@ -12,13 +12,15 @@ use crate::error::SyncError;
 use crate::utils::filepath;
 use crate::{error, requests, scan};
 use image::Progress;
-use log::{debug, trace};
+use log::{debug, trace, warn};
 use std::error::Error;
-use std::path::Path;
+use std::io::{Read, Write};
+use std::os::unix;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, RecvError, Sender, TryRecvError};
 use std::sync::{mpsc, Arc};
-use std::thread;
 use std::time::Duration;
+use std::{fs, io, thread};
 
 enum LaunchMessage {
     UpdateCompleted,
@@ -58,7 +60,10 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
     }
 
     let dir;
-    let path_buf = Path::new(&data_dir).join(&app.uid).join(&app_server.uid);
+    let path_buf = Path::new(&data_dir)
+        .join(&app.uid)
+        .join(&app_server.uid)
+        .join(&app.uid);
     let p_o = path_buf.to_str();
     match p_o {
         None => {
@@ -241,15 +246,21 @@ fn start_tasks(
             }
         }
 
-        task_event_tx
-            .send(TaskEventMessage::Progress(common::Progress {
-                v: index,
-                total: tasks.len(),
-                task: task.clone(),
-            }))
-            .unwrap();
+        let r = task_event_tx.send(TaskEventMessage::Progress(common::Progress {
+            v: index,
+            total: tasks.len(),
+            task: task.clone(),
+        }));
+        if let Err(e) = r {
+            warn!("send TaskEventMessage::Progress failed, err: {}", e);
+            return;
+        }
         // handle task
-        handle_task(task);
+        let r = handle_task(task);
+        if let Err(e) = r {
+            task_event_tx.send(TaskEventMessage::Failed).unwrap();
+            return;
+        }
     }
 
     task_event_tx.send(TaskEventMessage::Done).unwrap();
@@ -356,9 +367,116 @@ fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
     match task.sync_type {
         SyncTaskType::Create | SyncTaskType::Update => {
             debug!("will sync, file_info: {:?}", task.file_info);
+
+            let full_file_path = Path::new(&task.base_path).join(&task.file_info.relative_path);
+            let r = delete_file(&full_file_path);
+            if let Err(e) = r {
+                return Err(e);
+            }
+
+            match task.file_info.file_type {
+                FileType::Unknown => {
+                    return Err(SyncError::UnknownFileType);
+                }
+                FileType::File => {
+                    let url = format!(
+                        "{}/api/v1/download/{}",
+                        task.data_nodes.get(0).unwrap().address.to_address_string(),
+                        task.file_info.relative_path
+                    );
+                    let resp_r = reqwest::blocking::get(url);
+                    match resp_r {
+                        Ok(mut resp) => {
+                            let f_r = fs::File::create(&full_file_path);
+                            match f_r {
+                                Ok(f) => {
+                                    let mut writer = io::BufWriter::new(f);
+                                    let mut buf = [0; 1024];
+                                    while true {
+                                        let r = resp.read(&mut buf);
+                                        match r {
+                                            Ok(n) => {
+                                                if n == 0 {
+                                                    break;
+                                                }
+                                                let r = writer.write(&buf[..n]);
+                                                if let Err(e) = r {
+                                                    return Err(
+                                                        SyncError::ReadDownloadContentFailed,
+                                                    );
+                                                }
+                                            }
+                                            Err(_) => {
+                                                return Err(SyncError::ReadDownloadContentFailed);
+                                            }
+                                        }
+                                    }
+                                    let r = writer.flush();
+                                    if let Err(e) = r {
+                                        return Err(SyncError::CreateFileFailed);
+                                    }
+                                }
+                                Err(_) => {
+                                    return Err(SyncError::CreateFileFailed);
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            return Err(SyncError::DownloadFailed);
+                        }
+                    }
+                }
+                FileType::Dir => {
+                    let create_dir_r = fs::create_dir_all(&full_file_path);
+                    if let Err(e) = create_dir_r {
+                        warn!(
+                            "create dir failed, full_file_path: {:?}, err: {}",
+                            full_file_path, e
+                        );
+                        return Err(SyncError::CreateDirFailed);
+                    }
+                }
+                FileType::Symlink => {
+                    let mut content = "".to_string();
+                    let url = format!(
+                        "{}/api/v1/download/{}",
+                        task.data_nodes.get(0).unwrap().address.to_address_string(),
+                        task.file_info.relative_path
+                    );
+                    let resp_r = reqwest::blocking::get(url);
+                    match resp_r {
+                        Ok(mut resp) => {
+                            let read_r = resp.read_to_string(&mut content);
+                            if let Err(e) = read_r {
+                                return Err(SyncError::ReadDownloadContentFailed);
+                            }
+                        }
+                        Err(_) => {
+                            return Err(SyncError::DownloadFailed);
+                        }
+                    }
+                    let create_symlink_r = unix::fs::symlink(&content, &full_file_path);
+                    if let Err(e) = create_symlink_r {
+                        warn!(
+                            "create symlink failed, full_file_path: {:?}, err: {}",
+                            full_file_path, e
+                        );
+                        return Err(SyncError::CreateSymlinkFailed);
+                    }
+                }
+            }
         }
         SyncTaskType::Delete => {
             debug!("will delete, file_info: {:?}", task.file_info);
+            let full_file_path = Path::new(&task.base_path).join(&task.file_info.relative_path);
+            debug!(
+                "will delete, file_info: {:?}, full_file_path: {:?}",
+                task.file_info, full_file_path
+            );
+            let r = delete_file(&full_file_path);
+            if let Err(e) = r {
+                return Err(e);
+            }
         }
     }
     Ok(())
@@ -432,11 +550,11 @@ fn diff_server_client(
         for cf in &cfi.files {
             let cf_path = Path::new(&cf.relative_path);
             if cf_path.eq(sf_path) {
-                if cf.size != sf.size || cf.hash != sf.hash {
+                if cf.file_type != sf.file_type || cf.size != sf.size || cf.hash != sf.hash {
                     changed_files.push(sf.clone());
                 }
+                break;
             }
-            break;
         }
     }
     (add_files, changed_files, del_files)
@@ -484,4 +602,48 @@ fn print_file_info(fi: &Vec<FileInfo>, s: &str) {
         );
     }
     debug!("------- {} -------", s);
+}
+
+fn delete_file(full_file_path: &PathBuf) -> Result<(), SyncError> {
+    let full_file_path_exists_r = full_file_path.try_exists();
+    match full_file_path_exists_r {
+        Ok(exists) => {
+            let is_symlink = full_file_path.is_symlink();
+            // symlink is special!
+            if is_symlink {
+                warn!("[DEL][Symlink]{:?}", full_file_path);
+                let r = fs::remove_file(&full_file_path);
+                if let Err(e) = r {
+                    warn!("[DEL][Symlink][Failed]{:?}, err: {}", full_file_path, e);
+                    return Err(SyncError::DeleteFailed);
+                }
+            } else {
+                if exists {
+                    if is_symlink {
+                        // symlink is special!
+                    } else if full_file_path.is_dir() {
+                        warn!("[DEL][Dir]{:?}", full_file_path);
+                        let r = fs::remove_dir(&full_file_path);
+                        if let Err(e) = r {
+                            warn!("[DEL][Dir][Failed]{:?}, err: {}", full_file_path, e);
+                            return Err(SyncError::DeleteFailed);
+                        }
+                    } else if full_file_path.is_file() {
+                        warn!("[DEL][File]{:?}", full_file_path);
+                        let r = fs::remove_file(&full_file_path);
+                        if let Err(e) = r {
+                            warn!("[DEL][File][Failed]{:?}, err: {}", full_file_path, e);
+                            return Err(SyncError::DeleteFailed);
+                        }
+                    } else {
+                        return Err(SyncError::UnknownFileType);
+                    }
+                }
+            }
+        }
+        Err(_) => {
+            return Err(SyncError::CheckExistsFailed);
+        }
+    }
+    Ok(())
 }

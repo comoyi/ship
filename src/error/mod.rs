@@ -14,4 +14,14 @@ pub enum Error {
     CalcHashError,
 }
 
-pub enum SyncError {}
+pub enum SyncError {
+    CheckExistsFailed,
+    UnknownFileType,
+    CreateDirFailed,
+    CreateSymlinkFailed,
+    DeleteFailed,
+
+    DownloadFailed,
+    ReadDownloadContentFailed,
+    CreateFileFailed,
+}
