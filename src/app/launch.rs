@@ -9,7 +9,7 @@ use crate::data::common::{
 };
 use crate::data::core::AppDataPtr;
 use crate::error::SyncError;
-use crate::utils::filepath;
+use crate::utils::{filepath, hash};
 use crate::{error, requests, scan};
 use image::Progress;
 use log::{debug, trace, warn};
@@ -75,6 +75,20 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
         }
     }
     debug!("Launch app, dir: {}, app_server: {:?}", dir, app_server);
+
+    let p = Path::new(dir);
+    if !p.exists() {
+        let r = fs::create_dir_all(p);
+        if let Err(e) = r {
+            set_launch_status(
+                Arc::clone(&app_data_ptr),
+                app,
+                app_server,
+                StartStatus::Failed,
+            );
+            return;
+        }
+    }
 
     // scan client file info
     let cfi_r = scan::scan(dir);
@@ -391,8 +405,8 @@ fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                             match f_r {
                                 Ok(f) => {
                                     let mut writer = io::BufWriter::new(f);
-                                    let mut buf = [0; 1024];
-                                    while true {
+                                    let mut buf = [0; 1024 * 1024];
+                                    loop {
                                         let r = resp.read(&mut buf);
                                         match r {
                                             Ok(n) => {
@@ -414,6 +428,22 @@ fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                                     let r = writer.flush();
                                     if let Err(e) = r {
                                         return Err(SyncError::CreateFileFailed);
+                                    }
+
+                                    // check hash
+                                    let hash_r = hash::md5::md5_file(&full_file_path);
+                                    match hash_r {
+                                        Ok(hashSum) => {
+                                            if task.file_info.hash != hashSum {
+                                                warn!("synced file hash != file info hash, hash: {}, file_info: {:?}",hashSum,task.file_info);
+                                                return Err(SyncError::SyncedFileHashError);
+                                            } else {
+                                                debug!("synced file hash == file info hash, hash: {}, file_info: {:?}",hashSum,task.file_info);
+                                            }
+                                        }
+                                        Err(_) => {
+                                            return Err(SyncError::CheckSyncedFileError);
+                                        }
                                     }
                                 }
                                 Err(_) => {
@@ -455,6 +485,7 @@ fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                             return Err(SyncError::DownloadFailed);
                         }
                     }
+                    // TODO windows symlink compatible
                     let create_symlink_r = unix::fs::symlink(&content, &full_file_path);
                     if let Err(e) = create_symlink_r {
                         warn!(
@@ -463,6 +494,8 @@ fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                         );
                         return Err(SyncError::CreateSymlinkFailed);
                     }
+
+                    // TODO check symlink hash
                 }
             }
         }

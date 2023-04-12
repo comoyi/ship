@@ -24,4 +24,7 @@ pub enum SyncError {
     DownloadFailed,
     ReadDownloadContentFailed,
     CreateFileFailed,
+
+    CheckSyncedFileError,
+    SyncedFileHashError,
 }
