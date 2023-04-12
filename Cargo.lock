@@ -2828,6 +2828,7 @@ dependencies = [
  "log",
  "md5",
  "notify",
+ "rand",
  "reqwest",
  "serde",
  "serde_json",

@@ -13,6 +13,7 @@ use crate::utils::{filepath, hash};
 use crate::{error, requests, scan};
 use image::Progress;
 use log::{debug, trace, warn};
+use rand::{thread_rng, Rng};
 use std::error::Error;
 use std::io::{Read, Write};
 use std::os::unix;
@@ -433,12 +434,12 @@ fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                                     // check hash
                                     let hash_r = hash::md5::md5_file(&full_file_path);
                                     match hash_r {
-                                        Ok(hashSum) => {
-                                            if task.file_info.hash != hashSum {
-                                                warn!("synced file hash != file info hash, hash: {}, file_info: {:?}",hashSum,task.file_info);
+                                        Ok(hash_sum) => {
+                                            if task.file_info.hash != hash_sum {
+                                                warn!("synced file hash != file info hash, hash: {}, file_info: {:?}",hash_sum,task.file_info);
                                                 return Err(SyncError::SyncedFileHashError);
                                             } else {
-                                                debug!("synced file hash == file info hash, hash: {}, file_info: {:?}",hashSum,task.file_info);
+                                                debug!("synced file hash == file info hash, hash: {}, file_info: {:?}",hash_sum,task.file_info);
                                             }
                                         }
                                         Err(_) => {
@@ -468,9 +469,14 @@ fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                 }
                 FileType::Symlink => {
                     let mut content = "".to_string();
+                    let index = thread_rng().gen_range(0..task.data_nodes.len());
                     let url = format!(
                         "{}/api/v1/download/{}",
-                        task.data_nodes.get(0).unwrap().address.to_address_string(),
+                        task.data_nodes
+                            .get(index)
+                            .unwrap()
+                            .address
+                            .to_address_string(),
                         task.file_info.relative_path
                     );
                     let resp_r = reqwest::blocking::get(url);
