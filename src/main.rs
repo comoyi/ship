@@ -7,6 +7,7 @@ mod i18n;
 mod log;
 mod requests;
 mod scan;
+mod sync;
 mod utils;
 mod version;
 
