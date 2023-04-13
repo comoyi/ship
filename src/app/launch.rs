@@ -47,17 +47,9 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
         app_server,
         StartStatus::StartHandle,
     );
-    let data_dir_r = filepath::get_exe_dir();
-    let mut data_dir;
-    match data_dir_r {
-        Ok(dir) => {
-            data_dir = dir;
-        }
-        Err(_) => {
-            // TODO
-            panic!("");
-        }
-    }
+    let app_data_g = app_data_ptr.lock().unwrap();
+    let data_dir = app_data_g.settings.data_dir_path.clone();
+    drop(app_data_g);
 
     let dir;
     let path_buf = Path::new(&data_dir)

@@ -1,7 +1,7 @@
 use crate::data::common::{FileType, SyncTask, SyncTaskType};
 use crate::error::SyncError;
-use crate::utils;
 use crate::utils::hash;
+use crate::{cache, utils};
 use log::{debug, warn};
 use rand::{thread_rng, Rng};
 use std::io::{Read, Write};
@@ -74,6 +74,9 @@ pub fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                                             } else {
                                                 debug!("synced file hash == file info hash, hash: {}, file_info: {:?}",hash_sum,task.file_info);
                                             }
+
+                                            // cache
+                                            cache::add_to_cache(&full_file_path);
                                         }
                                         Err(_) => {
                                             return Err(SyncError::CheckSyncedFileError);
