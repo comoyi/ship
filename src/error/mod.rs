@@ -15,6 +15,8 @@ pub enum Error {
 }
 
 pub enum SyncError {
+    PathInvalid,
+
     CheckExistsFailed,
     UnknownFileType,
     CreateDirFailed,
@@ -23,8 +25,12 @@ pub enum SyncError {
 
     DownloadFailed,
     ReadDownloadContentFailed,
+    WriteDownloadContentFailed,
     CreateFileFailed,
 
     CheckSyncedFileError,
     SyncedFileHashError,
+
+    SyncFromCacheError,
+    AddToCacheFailed,
 }

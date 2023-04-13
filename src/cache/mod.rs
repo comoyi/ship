@@ -21,6 +21,26 @@ pub enum CacheError {
     GetCacheInfoFailed,
 }
 
+pub fn get_cache_file(hash_sum: &str) -> Option<CacheFile> {
+    let cache_info_r = get_cache_info();
+    match cache_info_r {
+        Ok(cache_info) => {
+            let f_o = cache_info.files.get(hash_sum);
+            match f_o {
+                None => {
+                    return None;
+                }
+                Some(f) => {
+                    return Some(f.clone());
+                }
+            }
+        }
+        Err(_) => {
+            return None;
+        }
+    }
+}
+
 pub fn add_to_cache<P: AsRef<Path>>(original_path: P) -> Result<(), CacheError> {
     let cache_dir_path_r = get_cache_dir_path();
     let cache_dir_path = match cache_dir_path_r {
@@ -105,16 +125,16 @@ fn add_to_db<P: AsRef<Path>>(dst_path: P, rel_path: &Path) -> Result<(), CacheEr
     Ok(())
 }
 
-#[derive(Serialize, Deserialize)]
-struct CacheFile {
-    rel_path: String,
-    hash: String,
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CacheFile {
+    pub relative_path: String,
+    pub hash: String,
 }
 
 impl CacheFile {
     fn new(rel_path: String, hash_sum: &str) -> Self {
         Self {
-            rel_path,
+            relative_path: rel_path,
             hash: hash_sum.clone().to_string(),
         }
     }
@@ -191,10 +211,10 @@ fn save_cache_info(cache_info: CacheInfo) -> Result<(), CacheError> {
     Ok(())
 }
 
-fn get_cache_dir_path() -> Result<String, CacheError> {
+pub fn get_cache_dir_path() -> Result<String, CacheError> {
     let program_dir_path_r = filepath::get_exe_dir();
     let cache_dir_path = match program_dir_path_r {
-        Ok(p) => Path::new(&p).join("cache"),
+        Ok(p) => Path::new(&p).join(".cache"),
         Err(_) => {
             return Err(CacheError::GetProgramDirPathFailed);
         }

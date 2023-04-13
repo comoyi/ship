@@ -1,3 +1,4 @@
+use crate::cache::CacheFile;
 use crate::data::common::{FileType, SyncTask, SyncTaskType};
 use crate::error::SyncError;
 use crate::utils::hash;
@@ -17,6 +18,9 @@ pub fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
             debug!("will sync, file_info: {:?}", task.file_info);
 
             let full_file_path = Path::new(&task.base_path).join(&task.file_info.relative_path);
+            if !full_file_path.starts_with(&task.base_path) {
+                return Err(SyncError::PathInvalid);
+            }
             let r = delete_file(&full_file_path);
             if let Err(e) = r {
                 return Err(e);
@@ -27,69 +31,44 @@ pub fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                     return Err(SyncError::UnknownFileType);
                 }
                 FileType::File => {
-                    let url = format!(
-                        "{}/api/v1/download/{}",
-                        task.data_nodes.get(0).unwrap().address.to_address_string(),
-                        task.file_info.relative_path
-                    );
-                    let resp_r = reqwest::blocking::get(url);
-                    match resp_r {
-                        Ok(mut resp) => {
-                            let f_r = fs::File::create(&full_file_path);
-                            match f_r {
-                                Ok(f) => {
-                                    let mut writer = io::BufWriter::new(f);
-                                    let mut buf = [0; 1024 * 1024];
-                                    loop {
-                                        let r = resp.read(&mut buf);
-                                        match r {
-                                            Ok(n) => {
-                                                if n == 0 {
-                                                    break;
-                                                }
-                                                let r = writer.write(&buf[..n]);
-                                                if let Err(e) = r {
-                                                    return Err(
-                                                        SyncError::ReadDownloadContentFailed,
-                                                    );
-                                                }
-                                            }
-                                            Err(_) => {
-                                                return Err(SyncError::ReadDownloadContentFailed);
-                                            }
-                                        }
-                                    }
-                                    let r = writer.flush();
-                                    if let Err(e) = r {
-                                        return Err(SyncError::CreateFileFailed);
-                                    }
-
-                                    // check hash
-                                    let hash_r = hash::md5::md5_file(&full_file_path);
-                                    match hash_r {
-                                        Ok(hash_sum) => {
-                                            if task.file_info.hash != hash_sum {
-                                                warn!("synced file hash != file info hash, hash: {}, file_info: {:?}",hash_sum,task.file_info);
-                                                return Err(SyncError::SyncedFileHashError);
-                                            } else {
-                                                debug!("synced file hash == file info hash, hash: {}, file_info: {:?}",hash_sum,task.file_info);
-                                            }
-
-                                            // cache
-                                            cache::add_to_cache(&full_file_path);
-                                        }
-                                        Err(_) => {
-                                            return Err(SyncError::CheckSyncedFileError);
-                                        }
-                                    }
+                    let cache_file_o = cache::get_cache_file(&task.file_info.hash);
+                    match cache_file_o {
+                        None => {
+                            let url = format!(
+                                "{}/api/v1/download/{}",
+                                task.data_nodes.get(0).unwrap().address.to_address_string(),
+                                task.file_info.relative_path
+                            );
+                            let mut resp = reqwest::blocking::get(url)
+                                .map_err(|e| SyncError::DownloadFailed)?;
+                            let f = fs::File::create(&full_file_path)
+                                .map_err(|e| SyncError::CreateFileFailed)?;
+                            let mut writer = io::BufWriter::new(f);
+                            let mut buf = [0; 1024 * 1024];
+                            loop {
+                                let n = resp
+                                    .read(&mut buf)
+                                    .map_err(|e| SyncError::ReadDownloadContentFailed)?;
+                                if n == 0 {
+                                    break;
                                 }
-                                Err(_) => {
-                                    return Err(SyncError::CreateFileFailed);
-                                }
+                                writer
+                                    .write(&buf[..n])
+                                    .map_err(|e| SyncError::WriteDownloadContentFailed)?;
                             }
+                            writer.flush().map_err(|e| SyncError::CreateFileFailed)?;
+                            check_hash(task, &full_file_path)?;
+                            cache::add_to_cache(&full_file_path)
+                                .map_err(|e| SyncError::AddToCacheFailed)?;
                         }
-                        Err(_) => {
-                            return Err(SyncError::DownloadFailed);
+                        Some(cache_file) => {
+                            let cache_dir = cache::get_cache_dir_path()
+                                .map_err(|e| SyncError::SyncFromCacheError)?;
+                            let cache_file_path =
+                                Path::new(&cache_dir).join(cache_file.relative_path);
+                            fs::copy(cache_file_path, &full_file_path)
+                                .map_err(|e| SyncError::SyncFromCacheError)?;
+                            check_hash(task, &full_file_path)?;
                         }
                     }
                 }
@@ -160,6 +139,25 @@ pub fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
         }
     }
     Ok(())
+}
+
+fn check_hash(task: &SyncTask, full_file_path: &PathBuf) -> Result<bool, SyncError> {
+    // check hash
+    let hash_sum =
+        hash::md5::md5_file(&full_file_path).map_err(|e| SyncError::CheckSyncedFileError)?;
+    if task.file_info.hash != hash_sum {
+        warn!(
+            "synced file hash != file info hash, hash: {}, file_info: {:?}",
+            hash_sum, task.file_info
+        );
+        return Err(SyncError::SyncedFileHashError);
+    } else {
+        debug!(
+            "synced file hash == file info hash, hash: {}, file_info: {:?}",
+            hash_sum, task.file_info
+        );
+    }
+    Ok(true)
 }
 
 fn delete_file(full_file_path: &PathBuf) -> Result<(), SyncError> {
