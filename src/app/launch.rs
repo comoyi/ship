@@ -10,13 +10,12 @@ use crate::data::common::{
 use crate::data::core::AppDataPtr;
 use crate::error::SyncError;
 use crate::utils::{filepath, hash};
-use crate::{error, requests, scan};
+use crate::{error, requests, scan, utils};
 use image::Progress;
 use log::{debug, trace, warn};
 use rand::{thread_rng, Rng};
 use std::error::Error;
 use std::io::{Read, Write};
-use std::os::unix;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, RecvError, Sender, TryRecvError};
 use std::sync::{mpsc, Arc};
@@ -491,8 +490,15 @@ fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                             return Err(SyncError::DownloadFailed);
                         }
                     }
-                    // TODO windows symlink compatible
-                    let create_symlink_r = unix::fs::symlink(&content, &full_file_path);
+                    let original_path = Path::new(&content);
+                    let create_symlink_r;
+                    if original_path.is_dir() {
+                        create_symlink_r =
+                            utils::fs::symlink::symlink_dir(&content, &full_file_path);
+                    } else {
+                        create_symlink_r =
+                            utils::fs::symlink::symlink_file(&content, &full_file_path);
+                    }
                     if let Err(e) = create_symlink_r {
                         warn!(
                             "create symlink failed, full_file_path: {:?}, err: {}",
@@ -500,8 +506,6 @@ fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                         );
                         return Err(SyncError::CreateSymlinkFailed);
                     }
-
-                    // TODO check symlink hash
                 }
             }
         }
