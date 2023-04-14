@@ -23,11 +23,11 @@ impl Gui {
                 let mut selected_app_server = app_data_g
                     .app_manager
                     .apps
-                    .get_mut(Box::leak(app.uid.clone().into_boxed_str()))
+                    .get_mut(Box::leak(app.uid().into_boxed_str()))
                     .unwrap();
                 if selected_app_server.selected_app_server_uid.is_none() {
-                    selected_app_server.selected_app_server_uid = Some(app_server.uid.clone());
-                    selected_uid_o = Some(app_server.uid.clone());
+                    selected_app_server.selected_app_server_uid = Some(app_server.uid().clone());
+                    selected_uid_o = Some(app_server.uid().clone());
                 }
                 drop(app_data_g);
             }
@@ -37,7 +37,7 @@ impl Gui {
                 .on_press(Message::SelectAppServer(app.clone(), app_server.clone()))
                 .style(theme::Button::Secondary);
             if let Some(selected_uid) = &selected_uid_o {
-                if selected_uid == &app_server.uid {
+                if selected_uid == &app_server.uid() {
                     app_server_btn = app_server_btn.style(theme::Button::Positive);
 
                     let description_panel = Card::new(

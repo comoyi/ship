@@ -113,18 +113,18 @@ impl Application for Gui {
             }
             Message::SelectApp(app) => {
                 let mut app_data_g = self.flags.data.lock().unwrap();
-                app_data_g.app_manager.selected_app_uid = Some(app.uid);
+                app_data_g.app_manager.selected_app_uid = Some(app.uid());
                 drop(app_data_g);
             }
             Message::SelectAppServer(app, app_server) => {
                 let mut app_data_g = self.flags.data.lock().unwrap();
-                let k: &str = &app_server.uid.clone();
+                let k: &str = &app_server.uid().clone();
                 app_data_g
                     .app_manager
                     .apps
-                    .get_mut(Box::leak(app.uid.into_boxed_str()))
+                    .get_mut(Box::leak(app.uid().into_boxed_str()))
                     .unwrap()
-                    .selected_app_server_uid = Some(app_server.uid);
+                    .selected_app_server_uid = Some(app_server.uid());
                 drop(app_data_g);
             }
             Message::ClickStart(app, app_server) => {
@@ -132,11 +132,11 @@ impl Application for Gui {
                 app_data_g
                     .app_manager
                     .apps
-                    .get_mut(Box::leak(app.uid.clone().into_boxed_str()))
+                    .get_mut(Box::leak(app.uid().clone().into_boxed_str()))
                     .unwrap()
                     .app_server_info
                     .servers
-                    .get_mut(&app_server.uid)
+                    .get_mut(&app_server.uid())
                     .unwrap()
                     .start_status = StartStatus::StartHandle;
                 drop(app_data_g);
@@ -237,9 +237,7 @@ pub struct GuiFlags {
 }
 
 impl GuiFlags {
-    pub fn new(app_data_ptr: &AppDataPtr) -> Self {
-        GuiFlags {
-            data: Arc::clone(app_data_ptr),
-        }
+    pub fn new(app_data_ptr: AppDataPtr) -> Self {
+        GuiFlags { data: app_data_ptr }
     }
 }

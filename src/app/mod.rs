@@ -1,3 +1,4 @@
+mod app_manage;
 pub mod launch;
 
 use crate::config::CONFIG;
@@ -12,6 +13,7 @@ use crate::utils::filepath;
 use log::warn;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 pub const APP_NAME: &str = "Launcher";
 
@@ -39,9 +41,14 @@ pub fn start() {
             panic!("err: {}", e);
         }
     }
-    let app_manager = AppManager::test_data();
-    app_data.app_manager = app_manager;
     let app_data_ptr = Arc::new(Mutex::new(app_data));
-    let gui_flags = GuiFlags::new(&app_data_ptr);
+
+    let app_data_ptr_1 = Arc::clone(&app_data_ptr);
+    thread::spawn(move || {
+        app_manage::start(app_data_ptr_1);
+    });
+
+    let app_data_ptr_2 = Arc::clone(&app_data_ptr);
+    let gui_flags = GuiFlags::new(app_data_ptr_2);
     gui::start(gui_flags);
 }

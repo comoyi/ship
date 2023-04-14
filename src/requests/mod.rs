@@ -1,5 +1,7 @@
 use crate::config::CONFIG;
 
+pub mod get_app_servers;
+pub mod get_apps;
 mod get_file_info;
 pub mod get_info;
 

@@ -23,14 +23,14 @@ impl Gui {
             if !flag {
                 flag = !flag;
                 if app_data_g.app_manager.selected_app_uid.is_none() {
-                    selected_app_uid = Some(app.uid.clone());
+                    selected_app_uid = Some(app.uid());
                 }
             }
             let mut app_btn = Button::new(Text::new(app.name.clone()))
                 .style(theme::Button::Secondary)
                 .on_press(Message::SelectApp(app.clone()));
             if let Some(selected_app_uid) = &selected_app_uid {
-                if &app.uid == selected_app_uid {
+                if &app.uid() == selected_app_uid {
                     app_btn = app_btn.style(theme::Button::Positive);
                     apps.push(app.clone());
                 }

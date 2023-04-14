@@ -53,9 +53,9 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
 
     let dir;
     let path_buf = Path::new(&data_dir)
-        .join(&app.uid)
-        .join(&app_server.uid)
-        .join(&app.uid);
+        .join(&app.uid())
+        .join(&app_server.uid())
+        .join(&app.uid());
     let p_o = path_buf.to_str();
     match p_o {
         None => {
@@ -402,11 +402,11 @@ fn set_launch_status(
     app_data_g
         .app_manager
         .apps
-        .get_mut(Box::leak(app.uid.clone().into_boxed_str()))
+        .get_mut(Box::leak(app.uid().clone().into_boxed_str()))
         .unwrap()
         .app_server_info
         .servers
-        .get_mut(&app_server.uid)
+        .get_mut(&app_server.uid())
         .unwrap()
         .start_status = status;
     drop(app_data_g);

@@ -19,7 +19,7 @@ impl AppServerInfo {
             "Server-1 description",
             100,
         );
-        servers.insert(s1.uid.to_string(), s1);
+        servers.insert(s1.uid(), s1);
         let s2 = AppServer::new(
             2,
             "Server-2",
@@ -27,13 +27,13 @@ impl AppServerInfo {
             "Server-2 description",
             50,
         );
-        servers.insert(s2.uid.to_string(), s2);
+        servers.insert(s2.uid(), s2);
         Self::new(servers)
     }
 }
 
 impl AppServerInfo {
-    fn new(servers: HashMap<String, AppServer>) -> Self {
+    pub fn new(servers: HashMap<String, AppServer>) -> Self {
         Self { servers: servers }
     }
 }
@@ -41,7 +41,6 @@ impl AppServerInfo {
 #[derive(Debug, Clone)]
 pub struct AppServer {
     pub id: u64,
-    pub uid: String,
     pub name: String,
     pub address: Address,
     pub description: String,
@@ -53,13 +52,20 @@ impl AppServer {
     pub fn new(id: u64, name: &str, address: Address, description: &str, priority: i64) -> Self {
         Self {
             id,
-            uid: format!("{}-{}", id, md5_string(&address.to_address_string())),
             name: name.to_string(),
             address,
             description: description.to_string(),
             priority,
             start_status: StartStatus::Wait,
         }
+    }
+
+    pub fn uid(&self) -> String {
+        format!(
+            "{}-{}",
+            self.id,
+            md5_string(&self.address.to_address_string())
+        )
     }
 }
 
