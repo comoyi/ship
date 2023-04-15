@@ -12,6 +12,7 @@ pub struct App {
     pub id: u64,
     pub name: String,
     pub priority: i64,
+    pub code: String,
 }
 
 pub fn get_apps() -> Result<Vec<App>, Error> {

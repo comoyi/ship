@@ -46,6 +46,7 @@ pub fn start(app_data_ptr: AppDataPtr) {
         let app = App {
             id: app_tmp.id,
             name: app_tmp.name,
+            code: app_tmp.code,
             priority: app_tmp.priority,
             app_server_info,
             selected_app_server_uid: None,

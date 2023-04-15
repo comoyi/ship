@@ -107,10 +107,7 @@ impl Application for Gui {
                 self.show_modal = false;
             }
             Message::Noop => {}
-            Message::Test => {
-                let app_server_info = AppServerInfo::test_data();
-                debug!("AppServerInfo: {:?}", app_server_info);
-            }
+            Message::Test => {}
             Message::SelectApp(app) => {
                 let mut app_data_g = self.flags.data.lock().unwrap();
                 app_data_g.app_manager.selected_app_uid = Some(app.uid());

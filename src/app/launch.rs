@@ -53,9 +53,9 @@ pub fn launch(app_data_ptr: AppDataPtr, app: &App, app_server: &AppServer) {
 
     let dir;
     let path_buf = Path::new(&data_dir)
-        .join(&app.uid())
+        .join(&app.code)
         .join(&app_server.uid())
-        .join(&app.uid());
+        .join(&app.code);
     let p_o = path_buf.to_str();
     match p_o {
         None => {

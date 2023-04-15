@@ -61,11 +61,7 @@ impl AppServer {
     }
 
     pub fn uid(&self) -> String {
-        format!(
-            "{}-{}",
-            self.id,
-            md5_string(&self.address.to_address_string())
-        )
+        format!("{}", self.id)
     }
 }
 

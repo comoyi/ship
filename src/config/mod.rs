@@ -81,5 +81,8 @@ pub fn init_config() -> Config {
 }
 
 fn set_default(b: ConfigBuilder<DefaultState>) -> ConfigBuilder<DefaultState> {
-    b.set_default("log_level", "TRACE").unwrap()
+    b.set_default("log_level", "TRACE")
+        .unwrap()
+        .set_default("language", "en_US")
+        .unwrap()
 }

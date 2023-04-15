@@ -21,6 +21,7 @@ impl AppManager {
         let app_1 = App {
             id: 1,
             name: "App-A".to_string(),
+            code: "AppA".to_string(),
             priority: 100,
             app_server_info: AppServerInfo::test_data(),
             selected_app_server_uid: None,
@@ -29,6 +30,7 @@ impl AppManager {
         let app_2 = App {
             id: 2,
             name: "App-B".to_string(),
+            code: "AppB".to_string(),
             priority: 50,
             app_server_info: AppServerInfo {
                 servers: Default::default(),
@@ -49,6 +51,7 @@ pub type Apps = HashMap<&'static str, App>;
 pub struct App {
     pub id: u64,
     pub name: String,
+    pub code: String,
     pub priority: i64,
     pub app_server_info: AppServerInfo,
     pub selected_app_server_uid: Option<String>,
