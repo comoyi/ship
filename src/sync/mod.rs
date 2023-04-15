@@ -12,7 +12,6 @@ use std::{fs, io, thread};
 
 pub fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
     debug!("handel task: {:?}", task);
-    thread::sleep(Duration::from_millis(1000));
     match task.sync_type {
         SyncTaskType::Create | SyncTaskType::Update => {
             debug!("will sync, file_info: {:?}", task.file_info);
@@ -34,9 +33,14 @@ pub fn handle_task(task: &SyncTask) -> Result<(), SyncError> {
                     let cache_file_o = cache::get_cache_file(&task.file_info.hash);
                     match cache_file_o {
                         None => {
+                            let index = thread_rng().gen_range(0..task.data_nodes.len());
                             let url = format!(
                                 "{}/api/v1/download/{}",
-                                task.data_nodes.get(0).unwrap().address.to_address_string(),
+                                task.data_nodes
+                                    .get(index)
+                                    .unwrap()
+                                    .address
+                                    .to_address_string(),
                                 task.file_info.relative_path
                             );
                             let mut resp = reqwest::blocking::get(url)
