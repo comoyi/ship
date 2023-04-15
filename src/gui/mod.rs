@@ -8,7 +8,7 @@ use crate::data::page::{Pag, Page};
 use crate::i18n::DICTIONARY;
 use crate::{app, t, version};
 use iced::widget::{Button, Column, Container, Text, TextInput};
-use iced::window::Icon;
+use iced::window::icon;
 use iced::{
     subscription, window, Application, Command, Element, Padding, Renderer, Settings, Subscription,
 };
@@ -26,7 +26,7 @@ const DEFAULT_SPACING: f32 = 10.0;
 pub fn start(flags: GuiFlags) {
     info!("start gui");
     let icon = Some(
-        Icon::from_file_data(
+        icon::from_file_data(
             include_bytes!("../../assets/images/icon.png"),
             Some(ImageFormat::Png),
         )
@@ -223,7 +223,7 @@ impl SubscriptionEvent {
     fn s(&self) -> Subscription<Message> {
         subscription::unfold("1", "InitData", |_| async {
             thread::sleep(Duration::from_millis(200));
-            (Some(Message::Noop), "NewData")
+            (Message::Noop, "NewData")
         })
     }
 }
