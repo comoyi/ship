@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/ship"]
+members = ["crates/ship", "crates/ship-gui"]
 
 [workspace.package]
 version = "0.1.0"
