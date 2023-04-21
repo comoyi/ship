@@ -1,0 +1,8 @@
+[workspace]
+members = ["crates/ship"]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Michael Chi <chicong@outlook.com>"]
+edition = "2021"
+
