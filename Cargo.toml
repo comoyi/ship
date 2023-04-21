@@ -1,5 +1,6 @@
 [workspace]
-members = ["crates/ship", "crates/ship-gui"]
+members = ["crates/ship", "crates/ship-gui", "crates/util"]
+resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
