@@ -56,7 +56,7 @@ impl Dictionary {
                 return v;
             } else {
                 trace!(
-                    "{}, not hit dict key, dict: {}, k: {:20}",
+                    "{}, not hit dict key, dict: {}, k: {:32}",
                     log_str,
                     selected_language.code(),
                     s
@@ -74,7 +74,7 @@ impl Dictionary {
             }
             if let Some(v) = l_dict.get(s) {
                 debug!(
-                    "{}, hit dict key, dict: {}, k: {:20}, v: {}",
+                    "{}, hit dict key, dict: {}, k: {:32}, v: {}",
                     log_str,
                     default_language.code(),
                     s,
@@ -83,7 +83,7 @@ impl Dictionary {
                 return v;
             } else {
                 trace!(
-                    "{}, not hit dict key, dict: {}, k: {:20}",
+                    "{}, not hit dict key, dict: {}, k: {:32}",
                     log_str,
                     default_language.code(),
                     s
@@ -91,7 +91,7 @@ impl Dictionary {
             }
         }
 
-        warn!("[i18n]not hit any dict key, k: {:20}", s);
+        warn!("[i18n]not hit any dict key, k: {:32}", s);
         s
     }
 
@@ -160,7 +160,7 @@ fn read_language(l: &str) -> Result<HashMap<&'static str, &'static str>, Error> 
     let y = serde_yaml::from_str::<HashMap<&'static str, &'static str>>(raw_str)
         .map_err(|_| Error::DecodeLanguageDataFailed)?;
     for (k, v) in y {
-        trace!("k: {:20},v: {}", k, v);
+        trace!("k: {:32},v: {}", k, v);
         m.insert(k, v);
     }
     Ok(m)

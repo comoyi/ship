@@ -8,5 +8,9 @@ edition = "2021"
 
 [dependencies]
 internationalization = { path = "../internationalization" }
+util = { path = "../util" }
+config = "0.13.3"
 log = "0.4.17"
 env_logger = "0.10.0"
+serde = { version="1.0.160", features = ["derive"] }
+lazy_static = "1.4.0"

@@ -1,3 +1,4 @@
+use crate::config::CONFIG;
 use crate::log::init_log;
 use log::debug;
 
@@ -10,8 +11,11 @@ impl App {
     }
 
     pub fn run(&self) {
-        init_log();
+        let _ = &CONFIG.log_level;
 
+        init_log(&CONFIG.log_level);
         debug!("log inited");
+
+        CONFIG.print_config();
     }
 }
