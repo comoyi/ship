@@ -1,3 +1,6 @@
+use crate::log::init_log;
+use log::debug;
+
 #[derive(Default)]
 pub struct App {}
 
@@ -6,5 +9,9 @@ impl App {
         Self::default()
     }
 
-    pub fn run(&self) {}
+    pub fn run(&self) {
+        init_log();
+
+        debug!("log inited");
+    }
 }
