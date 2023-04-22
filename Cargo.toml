@@ -1,9 +1,3 @@
 [workspace]
 members = ["crates/ship", "crates/ship-gui", "crates/util"]
 resolver = "2"
-
-[workspace.package]
-version = "0.1.0"
-authors = ["Michael Chi <chicong@outlook.com>"]
-edition = "2021"
-
