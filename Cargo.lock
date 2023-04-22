@@ -2118,6 +2118,7 @@ name = "ship"
 version = "0.1.0"
 dependencies = [
  "ship-gui",
+ "ship-internal",
 ]
 
 [[package]]
@@ -2127,6 +2128,10 @@ dependencies = [
  "iced",
  "iced_aw",
 ]
+
+[[package]]
+name = "ship-internal"
+version = "0.1.0"
 
 [[package]]
 name = "simd-adler32"

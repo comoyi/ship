@@ -1,5 +1,3 @@
-use ship_gui::GuiFlags;
-
 #[derive(Default)]
 pub struct App {}
 
@@ -8,7 +6,5 @@ impl App {
         Self::default()
     }
 
-    pub fn run(&self) {
-        ship_gui::start(GuiFlags::new());
-    }
+    pub fn run(&self) {}
 }
