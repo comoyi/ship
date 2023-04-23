@@ -1,6 +1,7 @@
 use crate::config::CONFIG;
 use crate::log::init_log;
-use log::debug;
+use internationalization::DICTIONARY;
+use log::{debug, warn};
 
 #[derive(Default)]
 pub struct App {}
@@ -17,5 +18,11 @@ impl App {
         debug!("log inited");
 
         CONFIG.print_config();
+
+        DICTIONARY
+            .switch_language_by_code(&CONFIG.language)
+            .unwrap_or_else(|e| {
+                warn!("switch language failed, err: {}", e);
+            });
     }
 }

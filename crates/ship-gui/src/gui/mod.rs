@@ -15,6 +15,7 @@ pub fn start(flags: GuiFlags) {
             ..window::Settings::default()
         },
         flags,
+        default_font: Some(include_bytes!("../../../../assets/fonts/font.ttf")),
         ..Settings::default()
     });
 }

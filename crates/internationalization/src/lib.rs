@@ -5,3 +5,4 @@ mod error;
 mod language;
 
 pub use dictionary::translate;
+pub use dictionary::DICTIONARY;
