@@ -18,14 +18,20 @@ pub struct Config {
     pub log_level: String,
     pub language: String,
     pub server: Server,
+    pub distribution_channel_code: String,
 }
 
 impl Config {
     pub fn print_config(&self) {
         debug!("log_level: {}", self.log_level);
+        debug!("language: {}", self.language);
         debug!(
             "server.address: {}",
             self.server.address.to_address_string()
+        );
+        debug!(
+            "distribution_channel_code: {}",
+            self.distribution_channel_code
         );
     }
 }
@@ -81,5 +87,7 @@ fn set_default(b: ConfigBuilder<DefaultState>) -> ConfigBuilder<DefaultState> {
     b.set_default("log_level", "OFF")
         .unwrap()
         .set_default("language", "en_US")
+        .unwrap()
+        .set_default("distribution_channel_code", "default")
         .unwrap()
 }

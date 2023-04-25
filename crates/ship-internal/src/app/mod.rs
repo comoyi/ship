@@ -3,6 +3,7 @@ mod settings;
 use crate::app::settings::Settings;
 use crate::config::CONFIG;
 use crate::log::init_log;
+use crate::request;
 use internationalization::DICTIONARY;
 use log::{debug, warn};
 
