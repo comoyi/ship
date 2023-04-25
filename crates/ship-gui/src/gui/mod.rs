@@ -1,6 +1,8 @@
 mod update;
+mod view;
 
-use crate::view::make_view;
+use crate::gui::view::navbar::PageRoute;
+use crate::gui::view::{make_view, PageManager};
 use iced::widget::{Column, Container};
 use iced::{window, Application, Command, Element, Renderer, Settings};
 
@@ -20,8 +22,10 @@ pub fn start(flags: GuiFlags) {
     });
 }
 
-struct Gui {
+pub struct Gui {
     flags: GuiFlags,
+    pub page_manager: PageManager,
+    pub show_about_modal: bool,
 }
 
 impl Application for Gui {
@@ -31,7 +35,14 @@ impl Application for Gui {
     type Flags = GuiFlags;
 
     fn new(flags: Self::Flags) -> (Self, Command<Self::Message>) {
-        (Self { flags }, Command::none())
+        (
+            Self {
+                flags,
+                page_manager: Default::default(),
+                show_about_modal: false,
+            },
+            Command::none(),
+        )
     }
 
     fn title(&self) -> String {
@@ -43,7 +54,7 @@ impl Application for Gui {
     }
 
     fn view(&self) -> Element<'_, Self::Message, Renderer<Self::Theme>> {
-        let v = make_view();
+        let v = make_view(self);
         let c = Column::new().push(v);
         Container::new(c).into()
     }
@@ -51,7 +62,11 @@ impl Application for Gui {
 
 #[derive(Clone, Debug)]
 pub enum Message {
-    Noop,
+    NoOp,
+    OpenAboutModal,
+    CloseAboutModal,
+    GoToPage(PageRoute),
+    SwitchLanguage,
 }
 
 #[derive(Default)]

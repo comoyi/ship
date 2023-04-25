@@ -2588,6 +2588,7 @@ dependencies = [
  "iced",
  "iced_aw",
  "internationalization",
+ "ship-internal",
 ]
 
 [[package]]

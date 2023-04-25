@@ -3,6 +3,8 @@ use crate::log::init_log;
 use internationalization::DICTIONARY;
 use log::{debug, warn};
 
+pub const APP_NAME: &str = "Launcher";
+
 #[derive(Default)]
 pub struct App {}
 
