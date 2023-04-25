@@ -1,7 +1,9 @@
+mod app;
 mod home;
 pub mod navbar;
 mod settings;
 
+use crate::gui::view::app::make_app_page;
 use crate::gui::view::home::make_home_page;
 use crate::gui::view::navbar::{make_nav_bar, PageRoute};
 use crate::gui::view::settings::make_settings_page;
@@ -34,6 +36,10 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
     match current_route {
         PageRoute::Home => {
             let page = make_home_page();
+            c = c.push(page);
+        }
+        PageRoute::App => {
+            let page = make_app_page();
             c = c.push(page);
         }
         PageRoute::Settings => {

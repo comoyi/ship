@@ -1,3 +1,6 @@
+mod settings;
+
+use crate::app::settings::Settings;
 use crate::config::CONFIG;
 use crate::log::init_log;
 use internationalization::DICTIONARY;
@@ -27,4 +30,8 @@ impl App {
                 warn!("switch language failed, err: {}", e);
             });
     }
+}
+
+struct AppData {
+    settings: Settings,
 }

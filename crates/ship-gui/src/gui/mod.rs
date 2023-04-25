@@ -54,7 +54,7 @@ impl Application for Gui {
     }
 
     fn view(&self) -> Element<'_, Self::Message, Renderer<Self::Theme>> {
-        let v = make_view(self);
+        let v = make_view(&self);
         let c = Column::new().push(v);
         Container::new(c).into()
     }

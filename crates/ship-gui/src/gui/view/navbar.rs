@@ -13,6 +13,12 @@ pub fn make_nav_bar(current_route: &PageRoute) -> Container<'static, Message> {
     );
     items.push(btn);
     let btn = NavItem::create(
+        t!("apps"),
+        Message::GoToPage(PageRoute::App),
+        Some(PageRoute::App),
+    );
+    items.push(btn);
+    let btn = NavItem::create(
         t!("settings"),
         Message::GoToPage(PageRoute::Settings),
         Some(PageRoute::Settings),
@@ -38,6 +44,7 @@ pub fn make_nav_bar(current_route: &PageRoute) -> Container<'static, Message> {
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub enum PageRoute {
     Home,
+    App,
     Settings,
 }
 
