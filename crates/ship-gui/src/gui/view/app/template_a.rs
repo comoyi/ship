@@ -29,10 +29,14 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
             if id == app_server.id {
                 app_server_btn = app_server_btn.style(theme::Button::Positive);
 
-                let description_panel = Card::new(
-                    Text::new(t!("introduction")),
-                    Text::new(app_server.description.clone()),
-                );
+                let mut app_server_c = Column::new();
+                if app_server.description != "" {
+                    let description_panel = Card::new(
+                        Text::new(t!("introduction")),
+                        Text::new(app_server.description.clone()),
+                    );
+                    app_server_c = app_server_c.push(description_panel);
+                }
                 let announcement_panel = Card::new(
                     Text::new(t!("announcement")),
                     Text::new(app_server.announcement.content.clone()),
@@ -43,10 +47,7 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                 });
                 let start_btn = Button::new(t!("start")).on_press(Message::ClickStart);
                 let control_c = Row::new().spacing(10).push(update_btn).push(start_btn);
-                let app_server_c = Column::new()
-                    .push(description_panel)
-                    .push(announcement_panel)
-                    .push(control_c);
+                app_server_c = app_server_c.push(announcement_panel).push(control_c);
 
                 app_servers_c = app_servers_c.push(app_server_c);
             }
