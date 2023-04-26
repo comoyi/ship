@@ -46,7 +46,7 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
             c = c.push(page);
         }
         PageRoute::Settings => {
-            let page = make_settings_page();
+            let page = make_settings_page(Arc::clone(&s.settings_manager));
             c = c.push(page);
         }
     }

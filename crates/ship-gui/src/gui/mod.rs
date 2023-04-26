@@ -6,6 +6,7 @@ use crate::gui::view::{make_view, PageManager};
 use iced::widget::{Column, Container};
 use iced::{window, Application, Command, Element, Renderer, Settings};
 use ship_internal::application::app::AppManager;
+use ship_internal::application::settings::SettingsManager;
 use std::sync::{Arc, Mutex};
 
 pub fn start(flags: GuiFlags) {
@@ -25,6 +26,7 @@ pub fn start(flags: GuiFlags) {
 }
 
 pub struct Gui {
+    settings_manager: Arc<Mutex<SettingsManager>>,
     pub page_manager: PageManager,
     app_manager: Arc<Mutex<AppManager>>,
     pub show_about_modal: bool,
@@ -41,6 +43,7 @@ impl Application for Gui {
         page_manager.current_route = PageRoute::App;
         (
             Self {
+                settings_manager: flags.settings_manager,
                 page_manager,
                 app_manager: flags.app_manager,
                 show_about_modal: false,
@@ -80,11 +83,18 @@ pub enum Message {
 
 #[derive(Default)]
 pub struct GuiFlags {
+    settings_manager: Arc<Mutex<SettingsManager>>,
     app_manager: Arc<Mutex<AppManager>>,
 }
 
 impl GuiFlags {
-    pub fn new(app_manager: Arc<Mutex<AppManager>>) -> Self {
-        Self { app_manager }
+    pub fn new(
+        settings_manager: Arc<Mutex<SettingsManager>>,
+        app_manager: Arc<Mutex<AppManager>>,
+    ) -> Self {
+        Self {
+            settings_manager,
+            app_manager,
+        }
     }
 }

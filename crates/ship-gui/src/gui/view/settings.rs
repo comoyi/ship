@@ -1,11 +1,25 @@
 use crate::gui::Message;
-use iced::widget::{Column, Container, Text};
+use iced::widget::{Column, Container, Row, Text, TextInput};
 use iced_aw::Card;
 use internationalization::t;
+use ship_internal::application::settings::SettingsManager;
+use std::sync::{Arc, Mutex};
 
-pub fn make_settings_page() -> Container<'static, Message> {
-    let card = Card::new(Text::new(t!("settings")), Text::new("Settings!")).max_width(300.0);
+pub fn make_settings_page(
+    settings_manager: Arc<Mutex<SettingsManager>>,
+) -> Container<'static, Message> {
+    let data_dir_label = Text::new(t!("data_dir"));
+    let settings_manager_g = settings_manager.lock().unwrap();
+    let data_dir_input = TextInput::new(
+        "",
+        &settings_manager_g.settings.general_settings.data_dir_path,
+    );
+    drop(settings_manager_g);
+    let data_dir_c = Row::new().push(data_dir_label).push(data_dir_input);
+
+    let card = Card::new(Text::new(""), data_dir_c);
     let mut c = Column::new();
     c = c.push(card);
+
     Container::new(c)
 }

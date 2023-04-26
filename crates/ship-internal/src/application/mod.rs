@@ -1,27 +1,32 @@
 pub mod app;
-mod settings;
+pub mod settings;
 
 use crate::application::app::{app_manage, AppManager};
-use crate::application::settings::Settings;
+use crate::application::settings::SettingsManager;
 use crate::config::CONFIG;
 use crate::log::init_log;
 use internationalization::DICTIONARY;
 use log::{debug, warn};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
+use util::filepath;
 
 pub const APP_NAME: &str = "Launcher";
 
 #[derive(Default)]
 pub struct App {
+    settings_manager: Arc<Mutex<SettingsManager>>,
     app_manager: Arc<Mutex<AppManager>>,
-    settings: Settings,
 }
 
 impl App {
-    pub fn new(app_manager: Arc<Mutex<AppManager>>) -> Self {
+    pub fn new(
+        settings_manager: Arc<Mutex<SettingsManager>>,
+        app_manager: Arc<Mutex<AppManager>>,
+    ) -> Self {
         Self {
+            settings_manager,
             app_manager,
-            settings: Default::default(),
         }
     }
 
@@ -38,6 +43,24 @@ impl App {
             .unwrap_or_else(|e| {
                 warn!("switch language failed, err: {}", e);
             });
+
+        let mut settings_manager = self.settings_manager.lock().unwrap();
+        let program_dir_path_r = filepath::get_exe_dir();
+        match program_dir_path_r {
+            Ok(program_dir_path) => {
+                settings_manager.settings.general_settings.program_dir_path =
+                    program_dir_path.clone();
+                let p = Path::new(&program_dir_path).join("data");
+                settings_manager.settings.general_settings.data_dir_path =
+                    p.to_str().unwrap().to_string();
+            }
+            Err(e) => {
+                // TODO
+                panic!("err: {}", e);
+            }
+        }
+
+        drop(settings_manager);
 
         app_manage::start(Arc::clone(&self.app_manager));
     }
