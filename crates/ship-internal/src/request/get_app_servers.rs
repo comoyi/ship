@@ -1,27 +1,22 @@
 use crate::request::error::Error;
 use crate::request::{get, get_full_url};
+use crate::types::common::Address;
 use log::debug;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct AppServersVo {
-    servers: Vec<AppServer>,
+    pub servers: Vec<AppServer>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct AppServer {
     pub id: u64,
+    pub app_id: u64,
     pub name: String,
     pub address: Address,
     pub description: String,
     pub priority: i64,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Address {
-    pub protocol: String,
-    pub host: String,
-    pub port: u16,
 }
 
 pub fn get_app_servers(app_id: u64) -> Result<AppServersVo, Error> {

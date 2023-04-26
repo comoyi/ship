@@ -1,25 +1,28 @@
-mod app;
+pub mod app;
 mod settings;
 
-use crate::application::app::AppManager;
+use crate::application::app::{app_manage, AppManager};
 use crate::application::settings::Settings;
 use crate::config::CONFIG;
 use crate::log::init_log;
-use crate::request;
 use internationalization::DICTIONARY;
 use log::{debug, warn};
+use std::sync::{Arc, Mutex};
 
 pub const APP_NAME: &str = "Launcher";
 
 #[derive(Default)]
 pub struct App {
-    app_manager: AppManager,
+    app_manager: Arc<Mutex<AppManager>>,
     settings: Settings,
 }
 
 impl App {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(app_manager: Arc<Mutex<AppManager>>) -> Self {
+        Self {
+            app_manager,
+            settings: Default::default(),
+        }
     }
 
     pub fn run(&self) {
@@ -35,5 +38,7 @@ impl App {
             .unwrap_or_else(|e| {
                 warn!("switch language failed, err: {}", e);
             });
+
+        app_manage::start(Arc::clone(&self.app_manager));
     }
 }

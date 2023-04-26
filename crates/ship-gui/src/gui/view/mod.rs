@@ -11,6 +11,8 @@ use crate::gui::{Gui, Message};
 use iced::widget::{Column, Container, Text};
 use iced_aw::{Card, Modal};
 use internationalization::t;
+use ship_internal::version;
+use std::sync::Arc;
 
 pub fn make_view(s: &Gui) -> Container<'static, Message> {
     let mut c = Column::new();
@@ -23,7 +25,8 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
             Text::new(t!("about")),
             Text::new(format!(
                 "{}\n\nVersion {}\n\nCopyright © 2023 清新池塘",
-                "app::APP_NAME", "version::VERSION_TEXT"
+                "app::APP_NAME",
+                version::VERSION_TEXT
             )),
         )
         .max_width(300.0)
@@ -39,7 +42,7 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
             c = c.push(page);
         }
         PageRoute::App => {
-            let page = make_app_page();
+            let page = make_app_page(Arc::clone(&s.app_manager));
             c = c.push(page);
         }
         PageRoute::Settings => {

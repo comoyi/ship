@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct AppsVo {
-    apps: Vec<App>,
+    pub apps: Vec<App>,
 }
 
 #[derive(Deserialize, Debug)]

@@ -5,6 +5,7 @@ settings: Settings
 help: Help
 about: About
 start: Start
+update: Update
 introduction: Introduction
 welcome: Welcome
 data_dir: Data Dir

@@ -5,6 +5,8 @@ use crate::gui::view::navbar::PageRoute;
 use crate::gui::view::{make_view, PageManager};
 use iced::widget::{Column, Container};
 use iced::{window, Application, Command, Element, Renderer, Settings};
+use ship_internal::application::app::AppManager;
+use std::sync::{Arc, Mutex};
 
 pub fn start(flags: GuiFlags) {
     let _ = Gui::run(Settings {
@@ -23,8 +25,8 @@ pub fn start(flags: GuiFlags) {
 }
 
 pub struct Gui {
-    flags: GuiFlags,
     pub page_manager: PageManager,
+    app_manager: Arc<Mutex<AppManager>>,
     pub show_about_modal: bool,
 }
 
@@ -35,10 +37,12 @@ impl Application for Gui {
     type Flags = GuiFlags;
 
     fn new(flags: Self::Flags) -> (Self, Command<Self::Message>) {
+        let mut page_manager = PageManager::default();
+        page_manager.current_route = PageRoute::App;
         (
             Self {
-                flags,
-                page_manager: Default::default(),
+                page_manager,
+                app_manager: flags.app_manager,
                 show_about_modal: false,
             },
             Command::none(),
@@ -67,13 +71,20 @@ pub enum Message {
     CloseAboutModal,
     GoToPage(PageRoute),
     SwitchLanguage,
+
+    SelectApp(u64),
+    SelectAppServer(u64, u64),
+    ClickUpdate { app_server_id: u64, app_id: u64 },
+    ClickStart,
 }
 
 #[derive(Default)]
-pub struct GuiFlags {}
+pub struct GuiFlags {
+    app_manager: Arc<Mutex<AppManager>>,
+}
 
 impl GuiFlags {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(app_manager: Arc<Mutex<AppManager>>) -> Self {
+        Self { app_manager }
     }
 }

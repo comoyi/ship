@@ -5,6 +5,7 @@ settings: 設定
 help: ヘルプ
 about: について
 start: 起動
+update: 更新
 introduction: 序文
 welcome: 歓迎
 data_dir: データフォルダ
