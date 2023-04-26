@@ -11,7 +11,7 @@ use crate::gui::{Gui, Message};
 use iced::widget::{Column, Container, Text};
 use iced_aw::{Card, Modal};
 use internationalization::t;
-use ship_internal::version;
+use ship_internal::{application, version};
 use std::sync::Arc;
 
 pub fn make_view(s: &Gui) -> Container<'static, Message> {
@@ -25,7 +25,7 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
             Text::new(t!("about")),
             Text::new(format!(
                 "{}\n\nVersion {}\n\nCopyright © 2023 清新池塘",
-                "app::APP_NAME",
+                application::APP_NAME,
                 version::VERSION_TEXT
             )),
         )

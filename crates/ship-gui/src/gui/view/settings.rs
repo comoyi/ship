@@ -1,5 +1,6 @@
 use crate::gui::Message;
 use iced::widget::{Column, Container, Row, Text, TextInput};
+use iced::Alignment;
 use iced_aw::Card;
 use internationalization::t;
 use ship_internal::application::settings::SettingsManager;
@@ -15,7 +16,11 @@ pub fn make_settings_page(
         &settings_manager_g.settings.general_settings.data_dir_path,
     );
     drop(settings_manager_g);
-    let data_dir_c = Row::new().push(data_dir_label).push(data_dir_input);
+    let data_dir_c = Row::new()
+        .align_items(Alignment::Center)
+        .spacing(10)
+        .push(data_dir_label)
+        .push(data_dir_input);
 
     let card = Card::new(Text::new(""), data_dir_c);
     let mut c = Column::new();

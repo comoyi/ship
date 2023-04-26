@@ -1,7 +1,11 @@
 use crate::application::app::app_server::{AppServer, AppServerInfo, AppServers};
 use crate::application::app::{App, AppManager, Apps};
 use crate::request;
+use crate::request::app_server::announcement::AnnouncementVo;
+use log::{debug, warn};
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 
 pub enum Error {
     GetAppsFailed,
@@ -55,5 +59,68 @@ pub fn start(app_manager: Arc<Mutex<AppManager>>) -> Result<(), Error> {
     }
     drop(app_manager_g);
 
+    thread::spawn(move || {
+        refresh_announcement(Arc::clone(&app_manager));
+    });
+
     Ok(())
+}
+
+fn refresh_announcement(app_manager: Arc<Mutex<AppManager>>) {
+    loop {
+        let mut address = None;
+        let mut app_id = 0;
+        let mut app_server_id = 0;
+        let mut app_manager_g = app_manager.lock().unwrap();
+        if let Some(selected_app_id) = app_manager_g.selected_app_id {
+            app_id = selected_app_id;
+            if let Some(app) = app_manager_g.apps.get_mut(&selected_app_id) {
+                if let Some(selected_app_server_id) = app.selected_app_server_id {
+                    app_server_id = selected_app_server_id;
+                    if let Some(app_server) =
+                        app.app_server_info.servers.get_mut(&selected_app_server_id)
+                    {
+                        address = Some(app_server.address.to_address_string());
+                    }
+                }
+            }
+        }
+        drop(app_manager_g);
+
+        if let Some(address) = address {
+            let announcement_r = request::app_server::announcement::get_announcement(&address);
+            match announcement_r {
+                Ok(announcement_vo) => {
+                    set_announcement(
+                        app_server_id,
+                        app_id,
+                        announcement_vo,
+                        Arc::clone(&app_manager),
+                    );
+                }
+                Err(_) => {
+                    warn!("get announcement failed");
+                }
+            }
+        }
+
+        thread::sleep(Duration::from_secs(60));
+    }
+}
+
+fn set_announcement(
+    app_server_id: u64,
+    app_id: u64,
+    announcement_vo: AnnouncementVo,
+    app_manager: Arc<Mutex<AppManager>>,
+) {
+    let mut app_manager_g = app_manager.lock().unwrap();
+
+    if let Some(app) = app_manager_g.apps.get_mut(&app_id) {
+        if let Some(app_server) = app.app_server_info.servers.get_mut(&app_server_id) {
+            app_server.announcement.content = announcement_vo.content;
+        }
+    }
+
+    drop(app_manager_g);
 }

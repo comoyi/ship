@@ -10,6 +10,7 @@ introduction: Introduction
 welcome: Welcome
 data_dir: Data Dir
 app_server_list_head: Servers
+announcement: Announcement
 start_status_start_processing: Start processing
 start_status_check_update: Check update
 start_status_updating: Updating

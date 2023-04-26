@@ -10,6 +10,7 @@ introduction: 序文
 welcome: 歓迎
 data_dir: データフォルダ
 app_server_list_head: サーバーリスト
+announcement: 発表
 start_status_start_processing: 処理を開始
 start_status_check_update: アップデートを確認
 start_status_updating: 更新中

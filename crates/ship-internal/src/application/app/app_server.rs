@@ -21,6 +21,7 @@ pub struct AppServer {
     pub name: String,
     pub address: Address,
     pub description: String,
+    pub announcement: Announcement,
     pub priority: i64,
 }
 
@@ -39,6 +40,7 @@ impl AppServer {
             name: name.to_string(),
             address,
             description: description.to_string(),
+            announcement: Default::default(),
             priority,
         }
     }
@@ -46,4 +48,9 @@ impl AppServer {
     pub fn uid(&self) -> String {
         format!("{}", self.id)
     }
+}
+
+#[derive(Default, Debug)]
+pub struct Announcement {
+    pub content: String,
 }

@@ -10,6 +10,7 @@ introduction: 简介
 welcome: 欢迎
 data_dir: 数据文件夹
 app_server_list_head: 服务器列表
+announcement: 公告
 start_status_start_processing: 开始处理
 start_status_check_update: 检查更新中
 start_status_updating: 更新中

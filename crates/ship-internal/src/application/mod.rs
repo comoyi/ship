@@ -5,6 +5,7 @@ use crate::application::app::{app_manage, AppManager};
 use crate::application::settings::SettingsManager;
 use crate::config::CONFIG;
 use crate::log::init_log;
+use crate::request;
 use internationalization::DICTIONARY;
 use log::{debug, warn};
 use std::path::Path;

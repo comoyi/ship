@@ -33,13 +33,20 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                     Text::new(t!("introduction")),
                     Text::new(app_server.description.clone()),
                 );
+                let announcement_panel = Card::new(
+                    Text::new(t!("announcement")),
+                    Text::new(app_server.announcement.content.clone()),
+                );
                 let update_btn = Button::new(t!("update")).on_press(Message::ClickUpdate {
                     app_server_id: app_server.id,
                     app_id: app_server.app_id,
                 });
                 let start_btn = Button::new(t!("start")).on_press(Message::ClickStart);
                 let control_c = Row::new().spacing(10).push(update_btn).push(start_btn);
-                let app_server_c = Column::new().push(description_panel).push(control_c);
+                let app_server_c = Column::new()
+                    .push(description_panel)
+                    .push(announcement_panel)
+                    .push(control_c);
 
                 app_servers_c = app_servers_c.push(app_server_c);
             }

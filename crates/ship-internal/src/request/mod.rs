@@ -1,8 +1,6 @@
 use crate::config::CONFIG;
 use crate::request::error::Error;
 use crate::version;
-use reqwest::header::HeaderMap;
-use reqwest::Response;
 use std::time::Duration;
 
 pub mod app_server;
