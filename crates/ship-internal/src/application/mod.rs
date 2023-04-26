@@ -1,6 +1,8 @@
+mod app;
 mod settings;
 
-use crate::app::settings::Settings;
+use crate::application::app::AppManager;
+use crate::application::settings::Settings;
 use crate::config::CONFIG;
 use crate::log::init_log;
 use crate::request;
@@ -10,7 +12,10 @@ use log::{debug, warn};
 pub const APP_NAME: &str = "Launcher";
 
 #[derive(Default)]
-pub struct App {}
+pub struct App {
+    app_manager: AppManager,
+    settings: Settings,
+}
 
 impl App {
     pub fn new() -> Self {
@@ -31,8 +36,4 @@ impl App {
                 warn!("switch language failed, err: {}", e);
             });
     }
-}
-
-struct AppData {
-    settings: Settings,
 }

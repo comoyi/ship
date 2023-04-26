@@ -1,4 +1,26 @@
+use serde::Deserialize;
 use serde_repr::Deserialize_repr;
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct Address {
+    pub protocol: String,
+    pub host: String,
+    pub port: u16,
+}
+
+impl Address {
+    pub fn new(protocol: &str, host: &str, port: u16) -> Self {
+        Self {
+            protocol: protocol.to_string(),
+            host: host.to_string(),
+            port,
+        }
+    }
+
+    pub fn to_address_string(&self) -> String {
+        format!("{}://{}:{}", self.protocol, self.host, self.port)
+    }
+}
 
 #[derive(Deserialize_repr, Debug)]
 #[repr(i8)]

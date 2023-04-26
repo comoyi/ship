@@ -3,7 +3,6 @@ use crate::request::{get, get_full_url_by_server_address};
 use crate::types::common::{FileType, ScanStatus};
 use log::debug;
 use serde::Deserialize;
-use std::time::Duration;
 
 #[derive(Deserialize, Debug)]
 pub struct ServerFileInfoVo {

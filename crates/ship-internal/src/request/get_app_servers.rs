@@ -2,7 +2,6 @@ use crate::request::error::Error;
 use crate::request::{get, get_full_url};
 use log::debug;
 use serde::Deserialize;
-use std::time::Duration;
 
 #[derive(Deserialize, Debug)]
 pub struct AppServersVo {
