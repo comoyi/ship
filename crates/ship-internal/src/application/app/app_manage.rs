@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{fs, io, thread};
 use util::filepath;
+use util::hash::md5;
 
 pub enum Error {
     GetAppsFailed,
@@ -194,15 +195,21 @@ enum DownloadImageError {
     CreateFileFailed,
     ReadDownloadContentFailed,
     WriteDownloadContentFailed,
+    RenameFileFailed,
+    CalcFileHashSumFailed,
+    ConvertPathToStringFailed,
 }
 
 fn download_image(url: &String) -> Result<String, DownloadImageError> {
     let program_dir_path =
         filepath::get_exe_dir().map_err(|_| DownloadImageError::GetBasePathFailed)?;
 
-    let full_file_path = Path::new(&program_dir_path).join("banner").join("a.png");
+    let tmp_file_name = format!("tmp_{}", chrono::Utc::now().timestamp());
+    let tmp_file_path = Path::new(&program_dir_path)
+        .join("banner")
+        .join(tmp_file_name);
     let mut resp = reqwest::blocking::get(url).map_err(|e| DownloadImageError::DownloadFailed)?;
-    let f = fs::File::create(&full_file_path).map_err(|e| DownloadImageError::CreateFileFailed)?;
+    let f = fs::File::create(&tmp_file_path).map_err(|e| DownloadImageError::CreateFileFailed)?;
     let mut writer = io::BufWriter::new(f);
     let mut buf = [0; 1024 * 1024];
     loop {
@@ -219,5 +226,13 @@ fn download_image(url: &String) -> Result<String, DownloadImageError> {
     writer
         .flush()
         .map_err(|e| DownloadImageError::CreateFileFailed)?;
-    Ok(full_file_path.to_str().unwrap().to_string())
+    let file_name =
+        md5::md5_file(&tmp_file_path).map_err(|_| DownloadImageError::CalcFileHashSumFailed)?;
+    let full_file_path = Path::new(&program_dir_path).join("banner").join(file_name);
+    fs::rename(&tmp_file_path, &full_file_path)
+        .map_err(|_| DownloadImageError::RenameFileFailed)?;
+    Ok(full_file_path
+        .to_str()
+        .ok_or(DownloadImageError::ConvertPathToStringFailed)?
+        .to_string())
 }

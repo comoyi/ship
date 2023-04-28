@@ -1,12 +1,13 @@
 use crate::gui::view::DEFAULT_SPACING;
 use crate::gui::Message;
 use iced::alignment::Horizontal;
-use iced::widget::{Button, Column, Container, Image, Row, Text};
+use iced::widget::{image, Button, Column, Container, Image, Row, Text};
 use iced::{theme, Length};
 use iced_aw::Card;
 use internationalization::t;
 use ship_internal::application::app::app_server::AppServer;
 use ship_internal::application::app::App;
+use std::fs;
 
 pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Message> {
     let app = match selected_app {
@@ -46,7 +47,10 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
 
                 let mut banner_panel = Row::new();
                 for x in &app_server.banners {
-                    let banner_image = Image::new(&x.image_path).height(80);
+                    let banner_image = Image::new(image::Handle::from_memory(
+                        fs::read(&x.image_path).unwrap_or_default(),
+                    ))
+                    .height(80);
                     banner_panel = banner_panel.push(banner_image);
                 }
                 let banner_c = Container::new(banner_panel);
