@@ -43,6 +43,11 @@ pub fn make_nav_bar(current_route: &PageRoute) -> Container<'static, Message> {
     items.push(nav_item);
     let mut r = Row::new();
     for mut item in items {
+        if let Some(r) = &item.route {
+            if current_route == r {
+                item.content = item.content.style(theme::Button::Positive);
+            }
+        }
         r = r.push(item.content);
     }
 
