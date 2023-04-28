@@ -145,7 +145,7 @@ fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
             }
         }
 
-        thread::sleep(Duration::from_secs(60));
+        thread::sleep(Duration::from_secs(120));
     }
 }
 

@@ -47,7 +47,8 @@ pub fn start(update_manager: Arc<Mutex<UpdateManager>>) {
     thread::spawn(move || loop {
         thread::sleep(Duration::from_millis(1000));
         let mut update_manager_g = update_manager.lock().unwrap();
-        debug!("{:?}", update_manager_g.update_tasks.len());
+        // TODO
+        // debug!("{:?}", update_manager_g.update_tasks.len());
         drop(update_manager_g);
     });
 }
