@@ -1,3 +1,4 @@
+use crate::types::banner::Banner;
 use crate::types::common::Address;
 use std::collections::HashMap;
 
@@ -22,6 +23,7 @@ pub struct AppServer {
     pub address: Address,
     pub description: String,
     pub announcement: Announcement,
+    pub banners: Vec<Banner>,
     pub priority: i64,
 }
 
@@ -41,6 +43,7 @@ impl AppServer {
             address,
             description: description.to_string(),
             announcement: Default::default(),
+            banners: Default::default(),
             priority,
         }
     }

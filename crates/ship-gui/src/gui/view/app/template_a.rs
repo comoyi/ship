@@ -1,7 +1,7 @@
 use crate::gui::view::DEFAULT_SPACING;
 use crate::gui::Message;
 use iced::alignment::Horizontal;
-use iced::widget::{Button, Column, Container, Row, Text};
+use iced::widget::{Button, Column, Container, Image, Row, Text};
 use iced::{theme, Length};
 use iced_aw::Card;
 use internationalization::t;
@@ -43,6 +43,14 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                     Text::new(t!("announcement")),
                     Text::new(app_server.announcement.content.clone()),
                 );
+
+                let mut banner_panel = Row::new();
+                for x in &app_server.banners {
+                    let banner_image = Image::new(&x.image_path).height(80);
+                    banner_panel = banner_panel.push(banner_image);
+                }
+                let banner_c = Container::new(banner_panel);
+
                 let update_btn = Button::new(t!("update")).on_press(Message::ClickUpdate {
                     app_server_id: app_server.id,
                     app_id: app_server.app_id,
@@ -52,7 +60,10 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                 let control_c = Container::new(control_panel)
                     .width(Length::Fill)
                     .align_x(Horizontal::Right);
-                app_server_c = app_server_c.push(announcement_panel).push(control_c);
+                app_server_c = app_server_c
+                    .push(announcement_panel)
+                    .push(banner_c)
+                    .push(control_c);
 
                 app_servers_c = app_servers_c.push(app_server_c);
             }

@@ -2,10 +2,16 @@ use crate::application::app::app_server::{AppServer, AppServerInfo, AppServers};
 use crate::application::app::{App, AppManager, Apps};
 use crate::request;
 use crate::request::app_server::announcement::AnnouncementVo;
+use crate::request::app_server::banner::BannerVo;
+use crate::types::banner::Banner;
 use log::{debug, warn};
+use reqwest::get;
+use std::io::{Read, Write};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::thread;
 use std::time::Duration;
+use std::{fs, io, thread};
+use util::filepath;
 
 pub enum Error {
     GetAppsFailed,
@@ -59,8 +65,14 @@ pub fn start(app_manager: Arc<Mutex<AppManager>>) -> Result<(), Error> {
     }
     drop(app_manager_g);
 
+    let app_manager_ptr = Arc::clone(&app_manager);
     thread::spawn(move || {
-        refresh_announcement(Arc::clone(&app_manager));
+        refresh_announcement(app_manager_ptr);
+    });
+
+    let app_manager_ptr = Arc::clone(&app_manager);
+    thread::spawn(move || {
+        refresh_banner(app_manager_ptr);
     });
 
     Ok(())
@@ -68,24 +80,8 @@ pub fn start(app_manager: Arc<Mutex<AppManager>>) -> Result<(), Error> {
 
 fn refresh_announcement(app_manager: Arc<Mutex<AppManager>>) {
     loop {
-        let mut address = None;
-        let mut app_id = 0;
-        let mut app_server_id = 0;
-        let mut app_manager_g = app_manager.lock().unwrap();
-        if let Some(selected_app_id) = app_manager_g.selected_app_id {
-            app_id = selected_app_id;
-            if let Some(app) = app_manager_g.apps.get_mut(&selected_app_id) {
-                if let Some(selected_app_server_id) = app.selected_app_server_id {
-                    app_server_id = selected_app_server_id;
-                    if let Some(app_server) =
-                        app.app_server_info.servers.get_mut(&selected_app_server_id)
-                    {
-                        address = Some(app_server.address.to_address_string());
-                    }
-                }
-            }
-        }
-        drop(app_manager_g);
+        let (app_server_id, app_id, address) =
+            get_current_app_server_info(Arc::clone(&app_manager));
 
         if let Some(address) = address {
             let announcement_r = request::app_server::announcement::get_announcement(&address);
@@ -123,4 +119,105 @@ fn set_announcement(
     }
 
     drop(app_manager_g);
+}
+
+fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
+    loop {
+        let (app_server_id, app_id, address) =
+            get_current_app_server_info(Arc::clone(&app_manager));
+
+        if let Some(address) = address {
+            let banner_r = request::app_server::banner::get_banner(&address);
+            match banner_r {
+                Ok(banner_vo) => {
+                    let mut banners = vec![];
+                    for x in banner_vo.banners {
+                        let mut banner = Banner::new(&x.image_url, &x.description);
+                        banner.image_path = download_image(&x.image_url).unwrap_or("".to_string());
+                        banners.push(banner);
+                    }
+                    set_banner(app_server_id, app_id, banners, Arc::clone(&app_manager));
+                }
+                Err(_) => {
+                    warn!("get banner failed");
+                }
+            }
+        }
+
+        thread::sleep(Duration::from_secs(60));
+    }
+}
+
+fn set_banner(
+    app_server_id: u64,
+    app_id: u64,
+    banners: Vec<Banner>,
+    app_manager: Arc<Mutex<AppManager>>,
+) {
+    let mut app_manager_g = app_manager.lock().unwrap();
+
+    if let Some(app) = app_manager_g.apps.get_mut(&app_id) {
+        if let Some(app_server) = app.app_server_info.servers.get_mut(&app_server_id) {
+            app_server.banners = banners;
+        }
+    }
+
+    drop(app_manager_g);
+}
+
+fn get_current_app_server_info(app_manager: Arc<Mutex<AppManager>>) -> (u64, u64, Option<String>) {
+    let mut address = None;
+    let mut app_id = 0;
+    let mut app_server_id = 0;
+    let mut app_manager_g = app_manager.lock().unwrap();
+    if let Some(selected_app_id) = app_manager_g.selected_app_id {
+        app_id = selected_app_id;
+        if let Some(app) = app_manager_g.apps.get_mut(&selected_app_id) {
+            if let Some(selected_app_server_id) = app.selected_app_server_id {
+                app_server_id = selected_app_server_id;
+                if let Some(app_server) =
+                    app.app_server_info.servers.get_mut(&selected_app_server_id)
+                {
+                    address = Some(app_server.address.to_address_string());
+                }
+            }
+        }
+    }
+    drop(app_manager_g);
+    (app_server_id, app_id, address)
+}
+
+#[derive(Debug)]
+enum DownloadImageError {
+    GetBasePathFailed,
+    DownloadFailed,
+    CreateFileFailed,
+    ReadDownloadContentFailed,
+    WriteDownloadContentFailed,
+}
+
+fn download_image(url: &String) -> Result<String, DownloadImageError> {
+    let program_dir_path =
+        filepath::get_exe_dir().map_err(|_| DownloadImageError::GetBasePathFailed)?;
+
+    let full_file_path = Path::new(&program_dir_path).join("banner").join("a.png");
+    let mut resp = reqwest::blocking::get(url).map_err(|e| DownloadImageError::DownloadFailed)?;
+    let f = fs::File::create(&full_file_path).map_err(|e| DownloadImageError::CreateFileFailed)?;
+    let mut writer = io::BufWriter::new(f);
+    let mut buf = [0; 1024 * 1024];
+    loop {
+        let n = resp
+            .read(&mut buf)
+            .map_err(|e| DownloadImageError::ReadDownloadContentFailed)?;
+        if n == 0 {
+            break;
+        }
+        writer
+            .write(&buf[..n])
+            .map_err(|e| DownloadImageError::WriteDownloadContentFailed)?;
+    }
+    writer
+        .flush()
+        .map_err(|e| DownloadImageError::CreateFileFailed)?;
+    Ok(full_file_path.to_str().unwrap().to_string())
 }
