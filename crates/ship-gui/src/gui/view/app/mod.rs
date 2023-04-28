@@ -1,6 +1,7 @@
 mod template_a;
 
 use crate::gui::view::app::template_a::make_template_a_page;
+use crate::gui::view::{DEFAULT_PADDING, DEFAULT_SPACING};
 use crate::gui::Message;
 use iced::theme;
 use iced::widget::{Button, Column, Container, Row, Text};
@@ -8,7 +9,7 @@ use ship_internal::application::app::{App, AppManager};
 use std::sync::{Arc, Mutex};
 
 pub fn make_app_page(app_manager: Arc<Mutex<AppManager>>) -> Container<'static, Message> {
-    let mut tab_c = Column::new();
+    let mut tab_c = Column::new().spacing(1);
 
     let app_manager_g = app_manager.lock().unwrap();
     let mut selected_app = None;
@@ -31,6 +32,9 @@ pub fn make_app_page(app_manager: Arc<Mutex<AppManager>>) -> Container<'static, 
 
     drop(app_manager_g);
 
-    let c = Row::new().push(tab_c).push(detail_c);
-    Container::new(c)
+    let c = Row::new()
+        .spacing(DEFAULT_SPACING)
+        .push(tab_c)
+        .push(detail_c);
+    Container::new(c).padding(DEFAULT_PADDING)
 }

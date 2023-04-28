@@ -4,6 +4,8 @@ server: 服务器
 settings: 设置
 help: 帮助
 about: 关于
+exit: 退出
+open_dir: 打开文件夹
 start: 开始
 update: 更新
 introduction: 简介

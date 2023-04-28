@@ -7,6 +7,7 @@ use iced::widget::{Column, Container};
 use iced::{window, Application, Command, Element, Renderer, Settings};
 use ship_internal::application::app::AppManager;
 use ship_internal::application::settings::SettingsManager;
+use ship_internal::application::update::update_manage::UpdateManager;
 use std::sync::{Arc, Mutex};
 
 pub fn start(flags: GuiFlags) {
@@ -29,6 +30,7 @@ pub struct Gui {
     settings_manager: Arc<Mutex<SettingsManager>>,
     pub page_manager: PageManager,
     app_manager: Arc<Mutex<AppManager>>,
+    update_manager: Arc<Mutex<UpdateManager>>,
     pub show_about_modal: bool,
 }
 
@@ -46,6 +48,7 @@ impl Application for Gui {
                 settings_manager: flags.settings_manager,
                 page_manager,
                 app_manager: flags.app_manager,
+                update_manager: flags.update_manager,
                 show_about_modal: false,
             },
             Command::none(),
@@ -70,6 +73,7 @@ impl Application for Gui {
 #[derive(Clone, Debug)]
 pub enum Message {
     NoOp,
+    Exit,
     OpenAboutModal,
     CloseAboutModal,
     GoToPage(PageRoute),
@@ -79,22 +83,27 @@ pub enum Message {
     SelectAppServer(u64, u64),
     ClickUpdate { app_server_id: u64, app_id: u64 },
     ClickStart,
+
+    OpenDir(String),
 }
 
 #[derive(Default)]
 pub struct GuiFlags {
     settings_manager: Arc<Mutex<SettingsManager>>,
     app_manager: Arc<Mutex<AppManager>>,
+    update_manager: Arc<Mutex<UpdateManager>>,
 }
 
 impl GuiFlags {
     pub fn new(
         settings_manager: Arc<Mutex<SettingsManager>>,
         app_manager: Arc<Mutex<AppManager>>,
+        update_manager: Arc<Mutex<UpdateManager>>,
     ) -> Self {
         Self {
             settings_manager,
             app_manager,
+            update_manager,
         }
     }
 }

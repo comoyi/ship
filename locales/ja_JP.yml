@@ -4,6 +4,8 @@ server: サーバ
 settings: 設定
 help: ヘルプ
 about: について
+exit: 終了
+open_dir: 開く
 start: 起動
 update: 更新
 introduction: 序文

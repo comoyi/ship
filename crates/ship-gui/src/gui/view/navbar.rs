@@ -1,10 +1,11 @@
 use crate::gui::Message;
+use iced::alignment::Horizontal;
 use iced::widget::{Button, Container, Row};
-use iced::{theme, Renderer};
+use iced::{theme, Length, Renderer};
 use internationalization::t;
 
 pub fn make_nav_bar(current_route: &PageRoute) -> Container<'static, Message> {
-    let mut c = Row::new();
+    let mut l = Row::new();
     let mut items = NavItems::new();
     let nav_item = NavItem::create(
         t!("home"),
@@ -26,18 +27,31 @@ pub fn make_nav_bar(current_route: &PageRoute) -> Container<'static, Message> {
     items.push(nav_item);
     let nav_item = NavItem::create(t!("about"), Message::OpenAboutModal, None);
     items.push(nav_item);
-    let nav_item = NavItem::create("    ", Message::NoOp, None);
-    items.push(nav_item);
-    let nav_item = NavItem::create("A/中/あ", Message::SwitchLanguage, None);
-    items.push(nav_item);
     for mut item in items {
         if let Some(r) = &item.route {
             if current_route == r {
                 item.content = item.content.style(theme::Button::Positive);
             }
         }
-        c = c.push(item.content);
+        l = l.push(item.content);
     }
+
+    let mut items = NavItems::new();
+    let nav_item = NavItem::create("A/中/あ", Message::SwitchLanguage, None);
+    items.push(nav_item);
+    let nav_item = NavItem::create(t!("exit"), Message::Exit, None);
+    items.push(nav_item);
+    let mut r = Row::new();
+    for mut item in items {
+        r = r.push(item.content);
+    }
+
+    let l_c = Container::new(l).width(Length::Fill);
+    let r_c = Container::new(r)
+        .width(Length::Fill)
+        .align_x(Horizontal::Right);
+
+    let c = Row::new().push(l_c).push(r_c);
     Container::new(c)
 }
 

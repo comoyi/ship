@@ -4,6 +4,8 @@ server: Server
 settings: Settings
 help: Help
 about: About
+exit: Exit
+open_dir: Open
 start: Start
 update: Update
 introduction: Introduction

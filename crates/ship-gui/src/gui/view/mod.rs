@@ -9,10 +9,14 @@ use crate::gui::view::navbar::{make_nav_bar, PageRoute};
 use crate::gui::view::settings::make_settings_page;
 use crate::gui::{Gui, Message};
 use iced::widget::{Column, Container, Text};
+use iced::Padding;
 use iced_aw::{Card, Modal};
 use internationalization::t;
 use ship_internal::{application, version};
 use std::sync::Arc;
+
+const DEFAULT_PADDING: Padding = Padding::new(10.0);
+const DEFAULT_SPACING: f32 = 10.0;
 
 pub fn make_view(s: &Gui) -> Container<'static, Message> {
     let mut c = Column::new();

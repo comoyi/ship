@@ -1,11 +1,17 @@
 use crate::gui::{Gui, Message};
 use iced::Command;
 use internationalization::DICTIONARY;
+use ship_internal::application::update;
+use std::process;
+use std::sync::Arc;
 
 impl Gui {
     pub fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::NoOp => {}
+            Message::Exit => {
+                process::exit(0);
+            }
             Message::OpenAboutModal => {
                 self.show_about_modal = true;
             }
@@ -28,8 +34,22 @@ impl Gui {
                 app_manager_g.select_app_server(app_server_id, app_id);
                 drop(app_manager_g);
             }
-            Message::ClickUpdate { .. } => {}
+            Message::ClickUpdate {
+                app_server_id,
+                app_id,
+            } => {
+                update::update(
+                    app_server_id,
+                    app_id,
+                    Arc::clone(&self.app_manager),
+                    Arc::clone(&self.update_manager),
+                );
+            }
             Message::ClickStart => {}
+            Message::OpenDir(p) => {
+                // TODO prompt when failed
+                let _ = open::that(p);
+            }
         }
         Command::none()
     }

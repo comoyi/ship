@@ -1,8 +1,12 @@
 pub mod app;
+mod scan;
 pub mod settings;
+pub mod update;
 
 use crate::application::app::{app_manage, AppManager};
 use crate::application::settings::SettingsManager;
+use crate::application::update::update_manage;
+use crate::application::update::update_manage::UpdateManager;
 use crate::config::CONFIG;
 use crate::log::init_log;
 use crate::request;
@@ -18,16 +22,19 @@ pub const APP_NAME: &str = "Launcher";
 pub struct App {
     settings_manager: Arc<Mutex<SettingsManager>>,
     app_manager: Arc<Mutex<AppManager>>,
+    update_manager: Arc<Mutex<UpdateManager>>,
 }
 
 impl App {
     pub fn new(
         settings_manager: Arc<Mutex<SettingsManager>>,
         app_manager: Arc<Mutex<AppManager>>,
+        update_manager: Arc<Mutex<UpdateManager>>,
     ) -> Self {
         Self {
             settings_manager,
             app_manager,
+            update_manager,
         }
     }
 
@@ -62,6 +69,8 @@ impl App {
         }
 
         drop(settings_manager);
+
+        update_manage::start(Arc::clone(&self.update_manager));
 
         app_manage::start(Arc::clone(&self.app_manager));
     }
