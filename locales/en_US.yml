@@ -5,6 +5,7 @@ settings: Settings
 help: Help
 about: About
 exit: Exit
+new_version: New Version
 open_dir: Open
 start: Start
 update: Update

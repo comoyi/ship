@@ -5,6 +5,7 @@ settings: 设置
 help: 帮助
 about: 关于
 exit: 退出
+new_version: 新版本
 open_dir: 打开文件夹
 start: 开始
 update: 更新

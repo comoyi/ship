@@ -5,6 +5,7 @@ settings: 設定
 help: ヘルプ
 about: について
 exit: 終了
+new_version: 新しいバージョン
 open_dir: 開く
 start: 起動
 update: 更新

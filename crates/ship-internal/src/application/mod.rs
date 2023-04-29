@@ -10,6 +10,8 @@ use crate::application::update::update_manage::UpdateManager;
 use crate::config::CONFIG;
 use crate::log::init_log;
 use crate::request;
+use crate::version::version_manage;
+use crate::version::version_manage::VersionManager;
 use internationalization::DICTIONARY;
 use log::{debug, warn};
 use std::fs;
@@ -21,6 +23,7 @@ pub const APP_NAME: &str = "Launcher";
 
 #[derive(Default)]
 pub struct App {
+    version_manager: Arc<Mutex<VersionManager>>,
     settings_manager: Arc<Mutex<SettingsManager>>,
     app_manager: Arc<Mutex<AppManager>>,
     update_manager: Arc<Mutex<UpdateManager>>,
@@ -28,11 +31,13 @@ pub struct App {
 
 impl App {
     pub fn new(
+        version_manager: Arc<Mutex<VersionManager>>,
         settings_manager: Arc<Mutex<SettingsManager>>,
         app_manager: Arc<Mutex<AppManager>>,
         update_manager: Arc<Mutex<UpdateManager>>,
     ) -> Self {
         Self {
+            version_manager,
             settings_manager,
             app_manager,
             update_manager,
@@ -72,6 +77,8 @@ impl App {
         }
 
         drop(settings_manager);
+
+        version_manage::start(Arc::clone(&self.version_manager));
 
         update_manage::start(Arc::clone(&self.update_manager));
 

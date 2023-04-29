@@ -24,6 +24,11 @@ impl Gui {
             Message::SwitchLanguage => {
                 DICTIONARY.toggle_language();
             }
+            Message::CloseVersionUpdateModal => {
+                let mut version_manager_g = self.version_manager.lock().unwrap();
+                version_manager_g.show_tip = false;
+                drop(version_manager_g);
+            }
             Message::SelectApp(app_id) => {
                 let mut app_manager_g = self.app_manager.lock().unwrap();
                 app_manager_g.select_app(app_id);
@@ -53,6 +58,10 @@ impl Gui {
             Message::OpenImage(p) => {
                 // TODO prompt when failed
                 let _ = open::that(p);
+            }
+            Message::OpenUrl(url) => {
+                // TODO prompt when failed
+                let _ = open::that(url);
             }
         }
         Command::none()

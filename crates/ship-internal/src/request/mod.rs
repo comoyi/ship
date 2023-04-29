@@ -4,6 +4,7 @@ use crate::version;
 use std::time::Duration;
 
 pub mod app_server;
+pub mod check_update;
 mod error;
 pub mod get_app_servers;
 pub mod get_apps;

@@ -8,6 +8,7 @@ use iced::{window, Application, Command, Element, Renderer, Settings};
 use ship_internal::application::app::AppManager;
 use ship_internal::application::settings::SettingsManager;
 use ship_internal::application::update::update_manage::UpdateManager;
+use ship_internal::version::version_manage::VersionManager;
 use std::sync::{Arc, Mutex};
 
 pub fn start(flags: GuiFlags) {
@@ -27,6 +28,7 @@ pub fn start(flags: GuiFlags) {
 }
 
 pub struct Gui {
+    version_manager: Arc<Mutex<VersionManager>>,
     settings_manager: Arc<Mutex<SettingsManager>>,
     pub page_manager: PageManager,
     app_manager: Arc<Mutex<AppManager>>,
@@ -45,6 +47,7 @@ impl Application for Gui {
         page_manager.current_route = PageRoute::App;
         (
             Self {
+                version_manager: flags.version_manager,
                 settings_manager: flags.settings_manager,
                 page_manager,
                 app_manager: flags.app_manager,
@@ -78,6 +81,7 @@ pub enum Message {
     CloseAboutModal,
     GoToPage(PageRoute),
     SwitchLanguage,
+    CloseVersionUpdateModal,
 
     SelectApp(u64),
     SelectAppServer(u64, u64),
@@ -86,10 +90,12 @@ pub enum Message {
 
     OpenDir(String),
     OpenImage(String),
+    OpenUrl(String),
 }
 
 #[derive(Default)]
 pub struct GuiFlags {
+    version_manager: Arc<Mutex<VersionManager>>,
     settings_manager: Arc<Mutex<SettingsManager>>,
     app_manager: Arc<Mutex<AppManager>>,
     update_manager: Arc<Mutex<UpdateManager>>,
@@ -97,11 +103,13 @@ pub struct GuiFlags {
 
 impl GuiFlags {
     pub fn new(
+        version_manager: Arc<Mutex<VersionManager>>,
         settings_manager: Arc<Mutex<SettingsManager>>,
         app_manager: Arc<Mutex<AppManager>>,
         update_manager: Arc<Mutex<UpdateManager>>,
     ) -> Self {
         Self {
+            version_manager,
             settings_manager,
             app_manager,
             update_manager,
