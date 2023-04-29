@@ -134,8 +134,9 @@ fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
                     let mut banners = vec![];
                     for x in banner_vo.banners {
                         let mut banner = Banner::new(&x.image_url, &x.description);
-                        banner.image_path = download_image(&x.image_url, app_server_id, app_id)
-                            .unwrap_or("".to_string());
+                        banner.image_path =
+                            get_local_image_path(&x.image_url, app_server_id, app_id)
+                                .unwrap_or("".to_string());
                         banners.push(banner);
                     }
                     set_banner(app_server_id, app_id, banners, Arc::clone(&app_manager));
@@ -202,7 +203,7 @@ enum DownloadImageError {
     ConvertPathToStringFailed,
 }
 
-fn download_image(
+fn get_local_image_path(
     url: &str,
     app_server_id: u64,
     app_id: u64,
@@ -215,6 +216,17 @@ fn download_image(
         .join(app_id.to_string())
         .join(app_server_id.to_string());
     fs::create_dir_all(&banner_base_path).map_err(|_| DownloadImageError::CreateDirFailed)?;
+
+    // hash by url
+    let file_name = md5::md5_string(url);
+    let full_file_path = banner_base_path.join(file_name);
+
+    if full_file_path.try_exists().unwrap_or(false) {
+        return Ok(full_file_path
+            .to_str()
+            .ok_or(DownloadImageError::ConvertPathToStringFailed)?
+            .to_string());
+    }
 
     let tmp_file_name = format!("tmp_{}", chrono::Utc::now().timestamp());
     let tmp_file_path = banner_base_path.join(tmp_file_name);
@@ -236,9 +248,10 @@ fn download_image(
     writer
         .flush()
         .map_err(|e| DownloadImageError::CreateFileFailed)?;
-    let file_name =
-        md5::md5_file(&tmp_file_path).map_err(|_| DownloadImageError::CalcFileHashSumFailed)?;
-    let full_file_path = banner_base_path.join(file_name);
+    // hash by file
+    // let file_name =
+    //     md5::md5_file(&tmp_file_path).map_err(|_| DownloadImageError::CalcFileHashSumFailed)?;
+    // let full_file_path = banner_base_path.join(file_name);
     fs::rename(&tmp_file_path, &full_file_path)
         .map_err(|_| DownloadImageError::RenameFileFailed)?;
     Ok(full_file_path

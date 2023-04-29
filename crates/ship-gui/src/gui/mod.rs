@@ -9,6 +9,7 @@ use ship_internal::application::app::AppManager;
 use ship_internal::application::settings::SettingsManager;
 use ship_internal::application::update::update_manage::UpdateManager;
 use ship_internal::version::version_manage::VersionManager;
+use ship_internal::{application, version};
 use std::sync::{Arc, Mutex};
 
 pub fn start(flags: GuiFlags) {
@@ -59,7 +60,12 @@ impl Application for Gui {
     }
 
     fn title(&self) -> String {
-        "".to_string()
+        let mut t = format!("{} - v{}", application::APP_NAME, version::VERSION_TEXT);
+        let sub_title = "";
+        if !sub_title.is_empty() {
+            t = format!("{}  {}", t, sub_title);
+        }
+        t
     }
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
