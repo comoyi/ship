@@ -1,6 +1,7 @@
 use crate::gui::{Gui, Message};
 use iced::Command;
 use internationalization::DICTIONARY;
+use ship_internal::application::app::app_manage;
 use ship_internal::application::update;
 use std::process;
 use std::sync::Arc;
@@ -38,6 +39,7 @@ impl Gui {
                 let mut app_manager_g = self.app_manager.lock().unwrap();
                 app_manager_g.select_app_server(app_server_id, app_id);
                 drop(app_manager_g);
+                app_manage::refresh_banner(Arc::clone(&self.app_manager));
             }
             Message::ClickUpdate {
                 app_server_id,

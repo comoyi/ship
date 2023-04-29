@@ -73,7 +73,7 @@ pub fn start(app_manager: Arc<Mutex<AppManager>>) -> Result<(), Error> {
 
     let app_manager_ptr = Arc::clone(&app_manager);
     thread::spawn(move || {
-        refresh_banner(app_manager_ptr);
+        loop_refresh_banner(app_manager_ptr);
     });
 
     Ok(())
@@ -122,8 +122,16 @@ fn set_announcement(
     drop(app_manager_g);
 }
 
-fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
+fn loop_refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
     loop {
+        refresh_banner(Arc::clone(&app_manager));
+        thread::sleep(Duration::from_secs(120));
+    }
+}
+
+pub fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
+    let app_manager = Arc::clone(&app_manager);
+    thread::spawn(move || {
         let (app_server_id, app_id, address) =
             get_current_app_server_info(Arc::clone(&app_manager));
 
@@ -146,9 +154,7 @@ fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
                 }
             }
         }
-
-        thread::sleep(Duration::from_secs(120));
-    }
+    });
 }
 
 fn set_banner(
