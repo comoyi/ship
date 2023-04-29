@@ -12,6 +12,7 @@ use crate::log::init_log;
 use crate::request;
 use internationalization::DICTIONARY;
 use log::{debug, warn};
+use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use util::filepath;
@@ -59,6 +60,8 @@ impl App {
                 settings_manager.settings.general_settings.program_dir_path =
                     program_dir_path.clone();
                 let p = Path::new(&program_dir_path).join("data");
+                // TODO remove unwrap
+                fs::create_dir_all(&p).unwrap();
                 settings_manager.settings.general_settings.data_dir_path =
                     p.to_str().unwrap().to_string();
             }

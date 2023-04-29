@@ -50,6 +50,10 @@ impl Gui {
                 // TODO prompt when failed
                 let _ = open::that(p);
             }
+            Message::OpenImage(p) => {
+                // TODO prompt when failed
+                let _ = open::that(p);
+            }
         }
         Command::none()
     }

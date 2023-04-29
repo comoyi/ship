@@ -45,13 +45,16 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                     Text::new(app_server.announcement.content.clone()),
                 );
 
-                let mut banner_panel = Row::new();
+                let mut banner_panel = Row::new().height(160);
                 for x in &app_server.banners {
                     let banner_image = Image::new(image::Handle::from_memory(
                         fs::read(&x.image_path).unwrap_or_default(),
-                    ))
-                    .height(80);
-                    banner_panel = banner_panel.push(banner_image);
+                    ));
+                    let image_btn = Button::new(banner_image)
+                        .padding(0)
+                        .on_press(Message::OpenImage(x.image_path.clone()));
+                    let image_c = Container::new(image_btn).width(160).height(160);
+                    banner_panel = banner_panel.push(image_c);
                 }
                 let banner_c = Container::new(banner_panel);
 

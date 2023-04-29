@@ -134,7 +134,8 @@ fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
                     let mut banners = vec![];
                     for x in banner_vo.banners {
                         let mut banner = Banner::new(&x.image_url, &x.description);
-                        banner.image_path = download_image(&x.image_url).unwrap_or("".to_string());
+                        banner.image_path = download_image(&x.image_url, app_server_id, app_id)
+                            .unwrap_or("".to_string());
                         banners.push(banner);
                     }
                     set_banner(app_server_id, app_id, banners, Arc::clone(&app_manager));
@@ -191,6 +192,7 @@ fn get_current_app_server_info(app_manager: Arc<Mutex<AppManager>>) -> (u64, u64
 #[derive(Debug)]
 enum DownloadImageError {
     GetBasePathFailed,
+    CreateDirFailed,
     DownloadFailed,
     CreateFileFailed,
     ReadDownloadContentFailed,
@@ -200,14 +202,22 @@ enum DownloadImageError {
     ConvertPathToStringFailed,
 }
 
-fn download_image(url: &String) -> Result<String, DownloadImageError> {
+fn download_image(
+    url: &str,
+    app_server_id: u64,
+    app_id: u64,
+) -> Result<String, DownloadImageError> {
     let program_dir_path =
         filepath::get_exe_dir().map_err(|_| DownloadImageError::GetBasePathFailed)?;
 
-    let tmp_file_name = format!("tmp_{}", chrono::Utc::now().timestamp());
-    let tmp_file_path = Path::new(&program_dir_path)
+    let banner_base_path = Path::new(&program_dir_path)
         .join("banner")
-        .join(tmp_file_name);
+        .join(app_id.to_string())
+        .join(app_server_id.to_string());
+    fs::create_dir_all(&banner_base_path).map_err(|_| DownloadImageError::CreateDirFailed)?;
+
+    let tmp_file_name = format!("tmp_{}", chrono::Utc::now().timestamp());
+    let tmp_file_path = banner_base_path.join(tmp_file_name);
     let mut resp = reqwest::blocking::get(url).map_err(|e| DownloadImageError::DownloadFailed)?;
     let f = fs::File::create(&tmp_file_path).map_err(|e| DownloadImageError::CreateFileFailed)?;
     let mut writer = io::BufWriter::new(f);
@@ -228,7 +238,7 @@ fn download_image(url: &String) -> Result<String, DownloadImageError> {
         .map_err(|e| DownloadImageError::CreateFileFailed)?;
     let file_name =
         md5::md5_file(&tmp_file_path).map_err(|_| DownloadImageError::CalcFileHashSumFailed)?;
-    let full_file_path = Path::new(&program_dir_path).join("banner").join(file_name);
+    let full_file_path = banner_base_path.join(file_name);
     fs::rename(&tmp_file_path, &full_file_path)
         .map_err(|_| DownloadImageError::RenameFileFailed)?;
     Ok(full_file_path

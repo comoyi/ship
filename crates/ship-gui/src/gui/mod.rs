@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex};
 pub fn start(flags: GuiFlags) {
     let _ = Gui::run(Settings {
         window: window::Settings {
-            size: (680, 380),
+            size: (780, 520),
             position: window::Position::Centered,
             min_size: Some((500, 300)),
             resizable: true,
@@ -85,6 +85,7 @@ pub enum Message {
     ClickStart,
 
     OpenDir(String),
+    OpenImage(String),
 }
 
 #[derive(Default)]
