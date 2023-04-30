@@ -1,16 +1,30 @@
 mod sync;
+mod update;
 pub mod update_manage;
 
 use crate::application::app::AppManager;
 use crate::application::scan;
 use crate::application::update::update_manage::UpdateManager;
-use std::sync::{Arc, Mutex};
+use std::sync::mpsc::{Receiver, Sender};
+use std::sync::{mpsc, Arc, Mutex};
 
 pub enum Error {
     AddUpdateTaskFailed,
 }
 
-#[derive(Default)]
+#[derive(Debug)]
+pub enum UpdateTaskControlMessage {
+    Start { app_server_id: u64 },
+    Stop { app_server_id: u64 },
+}
+
+#[derive(Debug)]
+pub enum TaskControlMessage {
+    Start,
+    Stop,
+}
+
+#[derive(Default, Debug)]
 pub enum UpdateTaskStatus {
     #[default]
     Wait,
@@ -20,24 +34,29 @@ pub enum UpdateTaskStatus {
     Finished,
 }
 
-#[derive(Default)]
+#[derive(Debug)]
 pub struct UpdateTask {
     pub id: u64,
     pub app_server_id: u64,
     pub status: UpdateTaskStatus,
+    pub tx: Sender<TaskControlMessage>,
+    rx: Receiver<TaskControlMessage>,
 }
 
 impl UpdateTask {
     pub fn new(id: u64, app_server_id: u64) -> Self {
+        let (tx, rx) = mpsc::channel::<TaskControlMessage>();
         Self {
             id,
             app_server_id,
             status: Default::default(),
+            tx,
+            rx,
         }
     }
 }
 
-pub fn update(
+pub fn start_update(
     app_server_id: u64,
     app_id: u64,
     app_manager: Arc<Mutex<AppManager>>,
@@ -48,9 +67,17 @@ pub fn update(
     // drop(app_manager_g);
 
     let mut update_manager_g = update_manager.lock().unwrap();
-    let update_task = update_manager_g.create_task(app_server_id);
-    update_manager_g.add_task(update_task);
+    update_manager_g.start_task(app_server_id);
     drop(update_manager_g);
+}
 
-    scan::scan("/tmp/test");
+pub fn stop_update(
+    app_server_id: u64,
+    app_id: u64,
+    app_manager: Arc<Mutex<AppManager>>,
+    update_manager: Arc<Mutex<UpdateManager>>,
+) {
+    let mut update_manager_g = update_manager.lock().unwrap();
+    update_manager_g.stop_task(app_server_id);
+    drop(update_manager_g);
 }

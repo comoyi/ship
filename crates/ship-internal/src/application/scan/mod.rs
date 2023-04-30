@@ -3,6 +3,7 @@ use chrono::Local;
 use log::{debug, warn};
 use std::path::Path;
 
+#[derive(Debug)]
 pub enum Error {
     ScanError,
     PathNotExitError,

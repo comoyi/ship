@@ -45,7 +45,7 @@ impl Gui {
                 app_server_id,
                 app_id,
             } => {
-                update::update(
+                update::start_update(
                     app_server_id,
                     app_id,
                     Arc::clone(&self.app_manager),

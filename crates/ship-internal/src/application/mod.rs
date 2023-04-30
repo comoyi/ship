@@ -80,7 +80,11 @@ impl App {
 
         version_manage::start(Arc::clone(&self.version_manager));
 
-        update_manage::start(Arc::clone(&self.update_manager));
+        update_manage::start(
+            Arc::clone(&self.update_manager),
+            Arc::clone(&self.app_manager),
+            Arc::clone(&self.settings_manager),
+        );
 
         app_manage::start(Arc::clone(&self.app_manager));
     }
