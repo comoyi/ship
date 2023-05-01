@@ -10,48 +10,30 @@ use util::filepath;
 pub enum CacheError {
     GetProgramDirPathFailed,
     GetCacheDirPathFailed,
+    GetUpdateCacheDirPathFailed,
     CreateCacheDirFailed,
     SaveCacheFileFailed,
     CachePathError,
-    SaveCacheDbFileFailed,
+    SaveCacheDbFailed,
     SerializeCacheInfoFailed,
     CalcHashFailed,
     GetCacheInfoFailed,
+    ConvertPathToStrFailed,
 }
 
 pub fn get_cache_file(hash_sum: &str) -> Option<CacheFile> {
-    let cache_info_r = get_cache_info();
-    match cache_info_r {
-        Ok(cache_info) => {
-            let f_o = cache_info.files.get(hash_sum);
-            match f_o {
-                None => {
-                    return None;
-                }
-                Some(f) => {
-                    return Some(f.clone());
-                }
-            }
-        }
-        Err(_) => {
-            return None;
-        }
-    }
+    let cache_info = get_cache_info().ok()?;
+    let f = cache_info.files.get(hash_sum)?;
+    return Some(f.clone());
 }
 
 pub fn add_to_cache<P: AsRef<Path>>(original_path: P) -> Result<(), CacheError> {
-    let cache_dir_path_r = get_cache_dir_path();
-    let cache_dir_path = match cache_dir_path_r {
-        Ok(p) => p,
-        Err(_) => {
-            return Err(CacheError::GetCacheDirPathFailed);
-        }
-    };
-    let r = fs::create_dir_all(&cache_dir_path);
-    if let Err(e) = r {
+    let cache_dir_path =
+        get_update_cache_dir_path().map_err(|_| CacheError::GetUpdateCacheDirPathFailed)?;
+    fs::create_dir_all(&cache_dir_path).map_err(|e| {
         warn!("create cache dir failed, err: {}", e);
-        return Err(CacheError::CreateCacheDirFailed);
-    }
+        return CacheError::CreateCacheDirFailed;
+    })?;
     let d = util::time::format_timestamp_to_date(chrono::Utc::now().timestamp());
     let t = time::SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -66,60 +48,32 @@ pub fn add_to_cache<P: AsRef<Path>>(original_path: P) -> Result<(), CacheError> 
     }
 
     let dst_path = dst_dir_path.join(&cache_name);
-    let r = fs::copy(&original_path, &dst_path);
-    match r {
-        Ok(_) => {
-            let cache_rel_path_r = dst_path.strip_prefix(&cache_dir_path);
-            match cache_rel_path_r {
-                Ok(cache_rel_path) => {
-                    let r = add_to_db(&dst_path, cache_rel_path);
-                    match r {
-                        Ok(_) => {}
-                        Err(e) => {
-                            warn!("add to db failed, err: {:?}", e);
-                            return Err(e);
-                        }
-                    }
-                }
-                Err(e) => {
-                    return Err(CacheError::CachePathError);
-                }
-            }
-        }
-        Err(e) => {
-            warn!("save cache file failed, err: {}", e);
-            return Err(CacheError::SaveCacheFileFailed);
-        }
-    }
+    fs::copy(&original_path, &dst_path).map_err(|e| {
+        warn!("save cache file failed, err: {}", e);
+        return CacheError::SaveCacheFileFailed;
+    })?;
+    let cache_rel_path = dst_path
+        .strip_prefix(&cache_dir_path)
+        .map_err(|_| CacheError::CachePathError)?;
+    add_to_db(&dst_path, cache_rel_path).map_err(|e| {
+        warn!("add to db failed, err: {:?}", e);
+        return e;
+    })?;
     Ok(())
 }
 
 fn add_to_db<P: AsRef<Path>>(dst_path: P, rel_path: &Path) -> Result<(), CacheError> {
-    let hash_sum_r = util::hash::md5::md5_file(dst_path);
-    match hash_sum_r {
-        Ok(hash_sum) => {
-            let cache_file = CacheFile::new(rel_path.to_str().unwrap().to_string(), &hash_sum);
-            let mut cache_info_r = get_cache_info();
-            match cache_info_r {
-                Ok(mut cache_info) => {
-                    cache_info.files.insert(hash_sum, cache_file);
-                    let r = save_cache_info(cache_info);
-                    match r {
-                        Ok(_) => {}
-                        Err(e) => {
-                            return Err(e);
-                        }
-                    }
-                }
-                Err(e) => {
-                    return Err(e);
-                }
-            }
-        }
-        Err(_) => {
-            return Err(CacheError::CalcHashFailed);
-        }
-    }
+    let hash_sum = util::hash::md5::md5_file(dst_path).map_err(|_| CacheError::CalcHashFailed)?;
+    let cache_file = CacheFile::new(
+        rel_path
+            .to_str()
+            .ok_or(CacheError::ConvertPathToStrFailed)?
+            .to_string(),
+        &hash_sum,
+    );
+    let mut cache_info = get_cache_info()?;
+    cache_info.files.insert(hash_sum, cache_file);
+    save_cache_info(cache_info)?;
     Ok(())
 }
 
@@ -152,83 +106,50 @@ impl Default for CacheInfo {
 }
 
 fn get_cache_info() -> Result<CacheInfo, CacheError> {
-    let p_r = get_cache_db_file();
-    let p;
-    match p_r {
-        Ok(x) => {
-            p = x;
-        }
-        Err(e) => {
-            return Err(e);
-        }
-    }
+    let p = get_cache_db_file()?;
     if !Path::new(&p).exists() {
         return Ok(CacheInfo::default());
     }
-    let d_r = fs::read_to_string(&p);
-    match d_r {
-        Ok(d) => {
-            let ci_r = serde_json::from_str::<CacheInfo>(&d);
-            match ci_r {
-                Ok(ci) => Ok(ci),
-                Err(e) => {
-                    warn!("deserialize failed, data: {}, err: {}", &d, e);
-                    return Err(CacheError::GetCacheInfoFailed);
-                }
-            }
-        }
-        Err(_) => {
-            return Err(CacheError::GetCacheInfoFailed);
-        }
-    }
+    let d = fs::read_to_string(&p).map_err(|_| CacheError::GetCacheInfoFailed)?;
+    let ci = serde_json::from_str::<CacheInfo>(&d).map_err(|e| {
+        warn!("deserialize failed, data: {}, err: {}", &d, e);
+        return CacheError::GetCacheInfoFailed;
+    })?;
+    Ok(ci)
 }
 
 fn save_cache_info(cache_info: CacheInfo) -> Result<(), CacheError> {
-    let p_r = get_cache_db_file();
-    let p;
-    match p_r {
-        Ok(x) => {
-            p = x;
-        }
-        Err(e) => {
-            return Err(e);
-        }
-    }
-    let j_r = serde_json::to_string(&cache_info);
-    match j_r {
-        Ok(j) => {
-            let r = fs::write(p, j);
-            if let Err(e) = r {
-                return Err(CacheError::SaveCacheDbFileFailed);
-            }
-        }
-        Err(_) => {
-            return Err(CacheError::SerializeCacheInfoFailed);
-        }
-    }
+    let p = get_cache_db_file()?;
+    let j = serde_json::to_string(&cache_info).map_err(|_| CacheError::SerializeCacheInfoFailed)?;
+
+    fs::write(p, j).map_err(|_| CacheError::SaveCacheDbFailed)?;
     Ok(())
 }
 
+pub fn get_update_cache_dir_path() -> Result<String, CacheError> {
+    let cache_dir_path = get_cache_dir_path()?;
+    let dir_path = Path::new(&cache_dir_path).join("update");
+    Ok(dir_path
+        .to_str()
+        .ok_or(CacheError::ConvertPathToStrFailed)?
+        .to_string())
+}
+
 pub fn get_cache_dir_path() -> Result<String, CacheError> {
-    let program_dir_path_r = filepath::get_exe_dir();
-    let cache_dir_path = match program_dir_path_r {
-        Ok(p) => Path::new(&p).join(".cache"),
-        Err(_) => {
-            return Err(CacheError::GetProgramDirPathFailed);
-        }
-    };
-    Ok(cache_dir_path.to_str().unwrap().to_string())
+    let program_dir_path =
+        filepath::get_exe_dir().map_err(|_| CacheError::GetProgramDirPathFailed)?;
+    let cache_dir_path = Path::new(&program_dir_path).join(".cache");
+    Ok(cache_dir_path
+        .to_str()
+        .ok_or(CacheError::ConvertPathToStrFailed)?
+        .to_string())
 }
 
 fn get_cache_db_file() -> Result<String, CacheError> {
-    let cache_dir_path_r = get_cache_dir_path();
-    let cache_dir_path = match cache_dir_path_r {
-        Ok(p) => p,
-        Err(_) => {
-            return Err(CacheError::GetCacheDirPathFailed);
-        }
-    };
-    let file_name = "cache-db";
+    let cache_dir_path = get_cache_dir_path().map_err(|_| CacheError::GetCacheDirPathFailed)?;
+    let file_name = "update-cache-db";
     let p = Path::new(&cache_dir_path).join(file_name);
-    Ok(p.to_str().unwrap().to_string())
+    Ok(p.to_str()
+        .ok_or(CacheError::ConvertPathToStrFailed)?
+        .to_string())
 }

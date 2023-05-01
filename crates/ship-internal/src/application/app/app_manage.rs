@@ -218,6 +218,7 @@ fn get_local_image_path(
         filepath::get_exe_dir().map_err(|_| DownloadImageError::GetBasePathFailed)?;
 
     let banner_base_path = Path::new(&program_dir_path)
+        .join(".cache")
         .join("banner")
         .join(app_id.to_string())
         .join(app_server_id.to_string());

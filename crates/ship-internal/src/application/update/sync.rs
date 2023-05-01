@@ -115,7 +115,7 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                                 .map_err(|e| SyncError::AddToCacheFailed)?;
                         }
                         Some(cache_file) => {
-                            let cache_dir = cache::get_cache_dir_path()
+                            let cache_dir = cache::get_update_cache_dir_path()
                                 .map_err(|e| SyncError::SyncFromCacheError)?;
                             let cache_file_path =
                                 Path::new(&cache_dir).join(cache_file.relative_path);
