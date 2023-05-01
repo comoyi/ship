@@ -11,7 +11,7 @@ use crate::request::app_server::get_file_info::ServerFileInfoVo;
 use crate::types::common::{ClientFileInfo, DataNode, FileInfo, ServerFileInfo};
 use log::{debug, warn};
 use std::path::Path;
-use std::sync::mpsc::TryRecvError;
+use std::sync::mpsc::RecvTimeoutError;
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 use std::{fs, thread};
@@ -193,6 +193,9 @@ fn handle_task(
         }
     }
 
+    // close and rx will recv disconnect err when channel empty
+    drop(sync_task_tx);
+
     loop {
         thread::sleep(Duration::from_millis(10));
 
@@ -222,17 +225,18 @@ fn handle_task(
         }
 
         // handle
-        let sync_task_r = sync_task_rx.try_recv();
+        let sync_task_r = sync_task_rx.recv_timeout(Duration::from_millis(100));
         match sync_task_r {
             Ok(sync_task) => {
                 update::sync::handle_task(sync_task);
             }
             Err(e) => match e {
-                TryRecvError::Empty => {
-                    debug!("empty");
+                RecvTimeoutError::Timeout => {
+                    // debug!("timeout");
                 }
-                TryRecvError::Disconnected => {
-                    debug!("disconnected");
+                RecvTimeoutError::Disconnected => {
+                    debug!("all sync task finished");
+                    return;
                 }
             },
         }
