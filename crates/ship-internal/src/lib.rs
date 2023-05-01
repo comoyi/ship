@@ -1,4 +1,5 @@
 pub mod application;
+mod cache;
 mod config;
 mod log;
 mod request;

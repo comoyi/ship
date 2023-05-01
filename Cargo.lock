@@ -2954,6 +2954,7 @@ dependencies = [
  "internationalization",
  "lazy_static",
  "log",
+ "rand",
  "reqwest",
  "serde",
  "serde_json",

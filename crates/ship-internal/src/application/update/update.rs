@@ -4,12 +4,12 @@ use crate::application::scan::Error;
 use crate::application::settings::SettingsManager;
 use crate::application::update::sync::{SyncTask, SyncTaskType};
 use crate::application::update::update_manage::UpdateManager;
-use crate::application::update::{TaskControlMessage, UpdateTask, UpdateTaskControlMessage};
+use crate::application::update::{TaskControlMessage, UpdateTaskControlMessage};
 use crate::application::{scan, update};
 use crate::request;
 use crate::request::app_server::get_file_info::ServerFileInfoVo;
 use crate::types::common::{ClientFileInfo, DataNode, FileInfo, ServerFileInfo};
-use log::{debug, warn};
+use log::{debug, info, warn};
 use std::path::Path;
 use std::sync::mpsc::RecvTimeoutError;
 use std::sync::{mpsc, Arc, Mutex};
@@ -151,14 +151,6 @@ fn handle_task(
     );
     print_diff_detail(&sfi, &cfi, &added_files, &changed_files, &deleted_files);
 
-    let settings_manager_g = settings_manager.lock().unwrap();
-    let base_path = settings_manager_g
-        .settings
-        .general_settings
-        .data_dir_path
-        .clone();
-    drop(settings_manager_g);
-
     let data_nodes: Vec<DataNode>;
     let app_server_info_r = request::app_server::get_app_server::get_app_server(&address);
     let data_nodes: Vec<_> = match app_server_info_r {
@@ -180,7 +172,7 @@ fn handle_task(
         &added_files,
         &changed_files,
         &deleted_files,
-        &base_path,
+        &data_path,
         &data_nodes,
     );
 
@@ -192,7 +184,6 @@ fn handle_task(
             return;
         }
     }
-
     // close and rx will recv disconnect err when channel empty
     drop(sync_task_tx);
 
@@ -228,14 +219,17 @@ fn handle_task(
         let sync_task_r = sync_task_rx.recv_timeout(Duration::from_millis(100));
         match sync_task_r {
             Ok(sync_task) => {
-                update::sync::handle_task(sync_task);
+                if let Err(e) = update::sync::handle_task(sync_task) {
+                    warn!("handle SyncTask failed, err: {:?}", e);
+                    return;
+                }
             }
             Err(e) => match e {
                 RecvTimeoutError::Timeout => {
                     // debug!("timeout");
                 }
                 RecvTimeoutError::Disconnected => {
-                    debug!("all sync task finished");
+                    info!("all sync task finished, app_server_id: {}", app_server_id);
                     return;
                 }
             },

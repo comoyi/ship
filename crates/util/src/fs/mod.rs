@@ -1,1 +1,1 @@
-mod symlink;
+pub mod symlink;
