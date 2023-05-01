@@ -249,23 +249,27 @@ fn get_data_path_by_app_server_id<'a>(
         .data_dir_path
         .clone();
     drop(settings_manager_g);
-    let app_id = get_app_id(app_server_id, app_manager)?;
-    Ok(format!("{}/{}/{}", base_path, app_id, app_server_id))
+    let (app_id, app_dir_name) = get_app_data(app_server_id, app_manager)?;
+    Ok(format!(
+        "{}/{}/{}/{}/{}",
+        base_path, app_dir_name, app_id, app_server_id, app_dir_name
+    ))
 }
 
-fn get_app_id<'a>(app_server_id: u64, app_manager: Arc<Mutex<AppManager>>) -> Result<u64, &'a str> {
+fn get_app_data<'a>(
+    app_server_id: u64,
+    app_manager: Arc<Mutex<AppManager>>,
+) -> Result<(u64, String), &'a str> {
     let app_manager_g = app_manager.lock().unwrap();
-    let mut app_id = None;
-    'outer: for (_, app) in &app_manager_g.apps {
-        for (x_, app_server) in &app.app_server_info.servers {
-            if app_server.id == app_server_id {
-                app_id = Some(app.id);
-                break 'outer;
+    for (_, app_tmp) in &app_manager_g.apps {
+        for (_, app_server_tmp) in &app_tmp.app_server_info.servers {
+            if app_server_tmp.id == app_server_id {
+                return Ok((app_tmp.id, app_tmp.code.clone()));
             }
         }
     }
     drop(app_manager_g);
-    app_id.ok_or("get app_id failed")
+    Err("get app_id failed")
 }
 
 fn diff_files(
