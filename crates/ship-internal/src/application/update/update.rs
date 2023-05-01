@@ -1,16 +1,18 @@
 use crate::application::app::app_server::AppServer;
 use crate::application::app::AppManager;
-use crate::application::scan;
 use crate::application::scan::Error;
 use crate::application::settings::SettingsManager;
+use crate::application::update::sync::{SyncTask, SyncTaskType};
 use crate::application::update::update_manage::UpdateManager;
 use crate::application::update::{TaskControlMessage, UpdateTask, UpdateTaskControlMessage};
+use crate::application::{scan, update};
 use crate::request;
 use crate::request::app_server::get_file_info::ServerFileInfoVo;
-use crate::types::common::ClientFileInfo;
+use crate::types::common::{ClientFileInfo, DataNode, FileInfo, ServerFileInfo};
 use log::{debug, warn};
+use std::path::Path;
 use std::sync::mpsc::TryRecvError;
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 use std::{fs, thread};
 
@@ -75,8 +77,11 @@ fn handle_task(
         }
     }
 
-    let data_path_r =
-        get_data_path_by_app_server_id(app_server_id, Arc::clone(&app_manager), settings_manager);
+    let data_path_r = get_data_path_by_app_server_id(
+        app_server_id,
+        Arc::clone(&app_manager),
+        Arc::clone(&settings_manager),
+    );
     let data_path = match data_path_r {
         Ok(p) => p,
         Err(_) => {
@@ -115,7 +120,7 @@ fn handle_task(
     // get server files
     let sfi_r = request::app_server::get_file_info::get_file_info(&address);
     let sfi = match sfi_r {
-        Ok(x) => x,
+        Ok(x) => ServerFileInfo::from(&x),
         Err(e) => {
             warn!(
                 "get ServerFileInfo failed, app_server_id: {}, err: {:?}",
@@ -137,6 +142,56 @@ fn handle_task(
             return;
         }
     };
+
+    // diff files
+    let (added_files, changed_files, deleted_files) = diff_files(&cfi, &sfi);
+    debug!(
+        "sfi: {:?}, cfi: {:?}, added_files: {:?}, changed_files: {:?}, deleted_files: {:?}",
+        sfi, cfi, added_files, changed_files, deleted_files
+    );
+    print_diff_detail(&sfi, &cfi, &added_files, &changed_files, &deleted_files);
+
+    let settings_manager_g = settings_manager.lock().unwrap();
+    let base_path = settings_manager_g
+        .settings
+        .general_settings
+        .data_dir_path
+        .clone();
+    drop(settings_manager_g);
+
+    let data_nodes: Vec<DataNode>;
+    let app_server_info_r = request::app_server::get_app_server::get_app_server(&address);
+    let data_nodes: Vec<_> = match app_server_info_r {
+        Ok(app_server_info) => app_server_info
+            .data_nodes
+            .iter()
+            .map(|x| DataNode::from(x))
+            .collect(),
+        Err(e) => {
+            warn!(
+                "get data_nodes failed, app_server_id: {}, err: {:?}",
+                app_server_id, e
+            );
+            return;
+        }
+    };
+
+    let sync_tasks = generate_sync_tasks(
+        &added_files,
+        &changed_files,
+        &deleted_files,
+        &base_path,
+        &data_nodes,
+    );
+
+    let (sync_task_tx, sync_task_rx) = mpsc::channel::<SyncTask>();
+    for x in sync_tasks {
+        let r = sync_task_tx.send(x);
+        if let Err(e) = r {
+            warn!("send SyncTask to channel failed, err: {}", e);
+            return;
+        }
+    }
 
     loop {
         thread::sleep(Duration::from_millis(10));
@@ -167,6 +222,20 @@ fn handle_task(
         }
 
         // handle
+        let sync_task_r = sync_task_rx.try_recv();
+        match sync_task_r {
+            Ok(sync_task) => {
+                update::sync::handle_task(sync_task);
+            }
+            Err(e) => match e {
+                TryRecvError::Empty => {
+                    debug!("empty");
+                }
+                TryRecvError::Disconnected => {
+                    debug!("disconnected");
+                }
+            },
+        }
     }
 }
 
@@ -199,4 +268,116 @@ fn get_app_id<'a>(app_server_id: u64, app_manager: Arc<Mutex<AppManager>>) -> Re
     }
     drop(app_manager_g);
     app_id.ok_or("get app_id failed")
+}
+
+fn diff_files(
+    cfi: &ClientFileInfo,
+    sfi: &ServerFileInfo,
+) -> (Vec<FileInfo>, Vec<FileInfo>, Vec<FileInfo>) {
+    let mut added_files: Vec<FileInfo> = vec![];
+    let mut changed_files: Vec<FileInfo> = vec![];
+    let mut deleted_files: Vec<FileInfo> = vec![];
+
+    for cf in &cfi.files {
+        if !is_in(cf, &sfi.files) {
+            deleted_files.push(cf.clone());
+        }
+    }
+    for sf in &sfi.files {
+        if !is_in(sf, &cfi.files) {
+            added_files.push(sf.clone());
+        }
+    }
+    for sf in &sfi.files {
+        let sf_path = Path::new(&sf.relative_path);
+        for cf in &cfi.files {
+            let cf_path = Path::new(&cf.relative_path);
+            if cf_path.eq(sf_path) {
+                if cf.file_type != sf.file_type || cf.size != sf.size || cf.hash != sf.hash {
+                    changed_files.push(sf.clone());
+                }
+                break;
+            }
+        }
+    }
+    (added_files, changed_files, deleted_files)
+}
+
+fn is_in(f: &FileInfo, files: &Vec<FileInfo>) -> bool {
+    let f_path = Path::new(&f.relative_path);
+    let mut flag = false;
+    for x in files {
+        let x_path = Path::new(&x.relative_path);
+        if x_path.eq(f_path) {
+            flag = true;
+            break;
+        }
+    }
+    if flag {
+        return true;
+    }
+    false
+}
+
+fn print_diff_detail(
+    sfi: &ServerFileInfo,
+    cfi: &ClientFileInfo,
+    added_files: &Vec<FileInfo>,
+    changed_files: &Vec<FileInfo>,
+    deleted_files: &Vec<FileInfo>,
+) {
+    print_file_info(&sfi.files, "server");
+    print_file_info(&cfi.files, "client");
+    print_file_info(&added_files, "added_files");
+    print_file_info(&changed_files, "changed_files");
+    print_file_info(&deleted_files, "deleted_files");
+}
+
+fn print_file_info(fi: &Vec<FileInfo>, s: &str) {
+    debug!("------- {} -------", s);
+    for f in fi {
+        debug!(
+            "type: {}, hash: {:32}, size: {:10}, rel_path: {}",
+            f.file_type.to_formatted_string(),
+            f.hash,
+            f.size,
+            f.relative_path
+        );
+    }
+    debug!("------- {} -------", s);
+}
+
+fn generate_sync_tasks(
+    added_files: &Vec<FileInfo>,
+    changed_files: &Vec<FileInfo>,
+    deleted_files: &Vec<FileInfo>,
+    base_path: &str,
+    data_nodes: &Vec<DataNode>,
+) -> Vec<SyncTask> {
+    let mut tasks = vec![];
+    for fi in added_files {
+        tasks.push(SyncTask::new(
+            SyncTaskType::Create,
+            fi.clone(),
+            base_path.to_string(),
+            data_nodes.clone(),
+        ));
+    }
+    for fi in changed_files {
+        tasks.push(SyncTask::new(
+            SyncTaskType::Update,
+            fi.clone(),
+            base_path.to_string(),
+            data_nodes.clone(),
+        ));
+    }
+    for fi in deleted_files {
+        tasks.push(SyncTask::new(
+            SyncTaskType::Delete,
+            fi.clone(),
+            base_path.to_string(),
+            data_nodes.clone(),
+        ));
+    }
+    tasks
 }

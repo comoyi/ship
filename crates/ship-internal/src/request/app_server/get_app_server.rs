@@ -1,5 +1,6 @@
 use crate::request::error::Error;
 use crate::request::{get, get_full_url_by_server_address};
+use crate::types::common::Address;
 use log::debug;
 use serde::Deserialize;
 
@@ -12,13 +13,6 @@ pub struct AppServerVo {
 pub struct DataNode {
     pub name: String,
     pub address: Address,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Address {
-    pub protocol: String,
-    pub host: String,
-    pub port: u16,
 }
 
 pub fn get_app_server(server_address: &str) -> Result<AppServerVo, Error> {

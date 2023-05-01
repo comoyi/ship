@@ -1,3 +1,4 @@
+use crate::request;
 use serde::Deserialize;
 use serde_repr::Deserialize_repr;
 
@@ -22,7 +23,7 @@ impl Address {
     }
 }
 
-#[derive(Deserialize_repr, Debug)]
+#[derive(Deserialize_repr, Clone, Debug)]
 #[repr(i8)]
 pub enum ScanStatus {
     Wait = 10,
@@ -31,7 +32,7 @@ pub enum ScanStatus {
     Completed = 40,
 }
 
-#[derive(Deserialize_repr, Debug)]
+#[derive(PartialEq, Deserialize_repr, Clone, Debug)]
 #[repr(i8)]
 pub enum FileType {
     Unknown = 0,
@@ -51,7 +52,7 @@ impl FileType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FileInfo {
     pub relative_path: String,
     pub file_type: FileType,
@@ -70,10 +71,32 @@ impl FileInfo {
     }
 }
 
+impl From<&request::app_server::get_file_info::FileInfo> for FileInfo {
+    fn from(value: &request::app_server::get_file_info::FileInfo) -> Self {
+        Self {
+            relative_path: value.relative_path.clone(),
+            file_type: value.file_type.clone(),
+            size: value.size,
+            hash: value.hash.clone(),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct ServerFileInfo {
     pub scan_status: ScanStatus,
     pub last_scan_finish_time: i64,
     pub files: Vec<FileInfo>,
+}
+
+impl From<&request::app_server::get_file_info::ServerFileInfoVo> for ServerFileInfo {
+    fn from(value: &request::app_server::get_file_info::ServerFileInfoVo) -> Self {
+        Self {
+            scan_status: value.scan_status.clone(),
+            last_scan_finish_time: value.last_scan_finish_time,
+            files: value.files.iter().map(|x| FileInfo::from(x)).collect(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -89,6 +112,21 @@ impl ClientFileInfo {
             scan_status,
             last_scan_finish_time,
             files,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct DataNode {
+    pub name: String,
+    pub address: Address,
+}
+
+impl From<&request::app_server::get_app_server::DataNode> for DataNode {
+    fn from(value: &request::app_server::get_app_server::DataNode) -> Self {
+        Self {
+            name: value.name.clone(),
+            address: value.address.clone(),
         }
     }
 }
