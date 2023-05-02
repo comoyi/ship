@@ -1,6 +1,6 @@
 use crate::gui::view::DEFAULT_SPACING;
 use crate::gui::Message;
-use iced::alignment::Horizontal;
+use iced::alignment::{Horizontal, Vertical};
 use iced::widget::{image, Button, Column, Container, Image, Row, Scrollable, Text};
 use iced::{theme, Length};
 use iced_aw::Card;
@@ -67,18 +67,33 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                         .height(Length::Fill),
                 );
 
-                let update_btn = Button::new(t!("update")).on_press(Message::ClickUpdate {
+                let update_btn =
+                    Button::new(
+                        Text::new(t!("update"))
+                            .horizontal_alignment(Horizontal::Center)
+                            .vertical_alignment(Vertical::Center),
+                    )
+                        .height(40)
+                        .on_press(Message::ClickUpdate {
+                            app_server_id: app_server.id,
+                            app_id: app_server.app_id,
+                        });
+                let start_btn = Button::new(
+                    Text::new(t!("launch"))
+                        .horizontal_alignment(Horizontal::Center)
+                        .vertical_alignment(Vertical::Center),
+                )
+                .width(150)
+                .height(40)
+                .style(theme::Button::Positive)
+                .on_press(Message::ClickStart {
                     app_server_id: app_server.id,
                     app_id: app_server.app_id,
                 });
-                let start_btn = Button::new(t!("launch")).on_press(Message::ClickStart {
-                    app_server_id: app_server.id,
-                    app_id: app_server.app_id,
-                });
-                let control_panel = Row::new().spacing(10).push(update_btn).push(start_btn);
+                let control_panel = Row::new().spacing(10).push(start_btn).push(update_btn);
                 let control_c = Container::new(control_panel)
                     .width(Length::Fill)
-                    .align_x(Horizontal::Right);
+                    .align_x(Horizontal::Left);
                 let mut app_server_info_c = Row::new()
                     .spacing(DEFAULT_SPACING)
                     .height(380)
@@ -86,7 +101,7 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                 if have_banner {
                     app_server_info_c = app_server_info_c.push(banner_c);
                 }
-                app_server_c = app_server_c.push(app_server_info_c).push(control_c);
+                app_server_c = app_server_c.push(control_c).push(app_server_info_c);
 
                 app_servers_c = app_servers_c.push(app_server_c);
             }
