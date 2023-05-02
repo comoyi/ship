@@ -23,7 +23,7 @@ pub struct FileInfo {
 
 pub fn get_file_info(server_address: &str) -> Result<ServerFileInfoVo, Error> {
     debug!("get_file_info");
-    let url = get_full_url_by_server_address("/files", server_address);
+    let url = get_full_url_by_server_address("/api/v1/files", server_address);
     let resp = get(&url)?;
     let body = resp.text().map_err(|_| Error::ReadBodyError)?;
     debug!("url: {}, body: {}", url, body);

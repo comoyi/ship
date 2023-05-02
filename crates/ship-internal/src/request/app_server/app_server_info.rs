@@ -15,8 +15,8 @@ pub struct DataNode {
     pub address: Address,
 }
 
-pub fn get_app_server(server_address: &str) -> Result<AppServerVo, Error> {
-    debug!("get_app_server");
+pub fn get_app_server_info(server_address: &str) -> Result<AppServerVo, Error> {
+    debug!("get_app_server_info");
     let url = get_full_url_by_server_address("/api/v1/info", server_address);
     let resp = get(&url)?;
     let body = resp.text().map_err(|_| Error::ReadBodyError)?;

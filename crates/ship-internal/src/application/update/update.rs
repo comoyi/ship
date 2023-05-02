@@ -7,7 +7,7 @@ use crate::application::update::update_manage::UpdateManager;
 use crate::application::update::{TaskControlMessage, UpdateTaskControlMessage};
 use crate::application::{scan, update};
 use crate::request;
-use crate::request::app_server::get_file_info::ServerFileInfoVo;
+use crate::request::app_server::file_info::ServerFileInfoVo;
 use crate::types::common::{ClientFileInfo, DataNode, FileInfo, ServerFileInfo};
 use log::{debug, info, warn};
 use std::path::Path;
@@ -120,7 +120,7 @@ fn handle_task(
     }
 
     // get server files
-    let sfi_r = request::app_server::get_file_info::get_file_info(&address);
+    let sfi_r = request::app_server::file_info::get_file_info(&address);
     let sfi = match sfi_r {
         Ok(x) => ServerFileInfo::from(&x),
         Err(e) => {
@@ -154,7 +154,7 @@ fn handle_task(
     print_diff_detail(&sfi, &cfi, &added_files, &changed_files, &deleted_files);
 
     let data_nodes: Vec<DataNode>;
-    let app_server_info_r = request::app_server::get_app_server::get_app_server(&address);
+    let app_server_info_r = request::app_server::app_server_info::get_app_server_info(&address);
     let data_nodes: Vec<_> = match app_server_info_r {
         Ok(app_server_info) => app_server_info
             .data_nodes

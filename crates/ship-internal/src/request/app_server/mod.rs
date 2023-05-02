@@ -1,4 +1,4 @@
 pub mod announcement;
+pub mod app_server_info;
 pub mod banner;
-pub mod get_app_server;
-pub mod get_file_info;
+pub mod file_info;

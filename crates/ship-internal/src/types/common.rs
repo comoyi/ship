@@ -71,8 +71,8 @@ impl FileInfo {
     }
 }
 
-impl From<&request::app_server::get_file_info::FileInfo> for FileInfo {
-    fn from(value: &request::app_server::get_file_info::FileInfo) -> Self {
+impl From<&request::app_server::file_info::FileInfo> for FileInfo {
+    fn from(value: &request::app_server::file_info::FileInfo) -> Self {
         Self {
             relative_path: value.relative_path.clone(),
             file_type: value.file_type.clone(),
@@ -89,8 +89,8 @@ pub struct ServerFileInfo {
     pub files: Vec<FileInfo>,
 }
 
-impl From<&request::app_server::get_file_info::ServerFileInfoVo> for ServerFileInfo {
-    fn from(value: &request::app_server::get_file_info::ServerFileInfoVo) -> Self {
+impl From<&request::app_server::file_info::ServerFileInfoVo> for ServerFileInfo {
+    fn from(value: &request::app_server::file_info::ServerFileInfoVo) -> Self {
         Self {
             scan_status: value.scan_status.clone(),
             last_scan_finish_time: value.last_scan_finish_time,
@@ -122,8 +122,8 @@ pub struct DataNode {
     pub address: Address,
 }
 
-impl From<&request::app_server::get_app_server::DataNode> for DataNode {
-    fn from(value: &request::app_server::get_app_server::DataNode) -> Self {
+impl From<&request::app_server::app_server_info::DataNode> for DataNode {
+    fn from(value: &request::app_server::app_server_info::DataNode) -> Self {
         Self {
             name: value.name.clone(),
             address: value.address.clone(),
