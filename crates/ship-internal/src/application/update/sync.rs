@@ -9,6 +9,7 @@ use util::hash;
 
 #[derive(Debug)]
 pub struct SyncTask {
+    pub app_id: u64,
     pub sync_type: SyncTaskType,
     pub file_info: FileInfo,
     pub base_path: String,
@@ -17,12 +18,14 @@ pub struct SyncTask {
 
 impl SyncTask {
     pub fn new(
+        app_id: u64,
         sync_type: SyncTaskType,
         file_info: FileInfo,
         base_path: String,
         data_nodes: Vec<DataNode>,
     ) -> Self {
         Self {
+            app_id,
             sync_type,
             file_info,
             base_path,
@@ -111,7 +114,7 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                             }
                             writer.flush().map_err(|e| SyncError::CreateFileFailed)?;
                             check_hash(&task, &full_file_path)?;
-                            cache::add_to_cache(&full_file_path)
+                            cache::add_to_cache(&full_file_path, task.app_id)
                                 .map_err(|e| SyncError::AddToCacheFailed)?;
                         }
                         Some(cache_file) => {

@@ -95,6 +95,7 @@ fn handle_task(
         return;
     }
 
+    let mut app_id = 0;
     let mut address = "".to_string();
     let app_manager_g = app_manager.lock().unwrap();
     let mut is_found = false;
@@ -102,6 +103,7 @@ fn handle_task(
         for (_, app_server) in &app.app_server_info.servers {
             if app_server.id == app_server_id {
                 is_found = true;
+                app_id = app.id;
                 address = app_server.address.to_address_string();
                 break 'outer;
             }
@@ -169,6 +171,7 @@ fn handle_task(
     };
 
     let sync_tasks = generate_sync_tasks(
+        app_id,
         &added_files,
         &changed_files,
         &deleted_files,
@@ -350,6 +353,7 @@ fn print_file_info(fi: &Vec<FileInfo>, s: &str) {
 }
 
 fn generate_sync_tasks(
+    app_id: u64,
     added_files: &Vec<FileInfo>,
     changed_files: &Vec<FileInfo>,
     deleted_files: &Vec<FileInfo>,
@@ -359,6 +363,7 @@ fn generate_sync_tasks(
     let mut tasks = vec![];
     for fi in added_files {
         tasks.push(SyncTask::new(
+            app_id,
             SyncTaskType::Create,
             fi.clone(),
             base_path.to_string(),
@@ -367,6 +372,7 @@ fn generate_sync_tasks(
     }
     for fi in changed_files {
         tasks.push(SyncTask::new(
+            app_id,
             SyncTaskType::Update,
             fi.clone(),
             base_path.to_string(),
@@ -375,6 +381,7 @@ fn generate_sync_tasks(
     }
     for fi in deleted_files {
         tasks.push(SyncTask::new(
+            app_id,
             SyncTaskType::Delete,
             fi.clone(),
             base_path.to_string(),

@@ -27,7 +27,7 @@ pub fn get_cache_file(hash_sum: &str) -> Option<CacheFile> {
     return Some(f.clone());
 }
 
-pub fn add_to_cache<P: AsRef<Path>>(original_path: P) -> Result<(), CacheError> {
+pub fn add_to_cache<P: AsRef<Path>>(original_path: P, app_id: u64) -> Result<(), CacheError> {
     let cache_dir_path =
         get_update_cache_dir_path().map_err(|_| CacheError::GetUpdateCacheDirPathFailed)?;
     fs::create_dir_all(&cache_dir_path).map_err(|e| {
@@ -40,7 +40,7 @@ pub fn add_to_cache<P: AsRef<Path>>(original_path: P) -> Result<(), CacheError> 
         .unwrap()
         .as_nanos();
     let cache_name = format!("{}", t);
-    let dst_dir_path = Path::new(&cache_dir_path).join(d);
+    let dst_dir_path = Path::new(&cache_dir_path).join(app_id.to_string()).join(d);
     let r = fs::create_dir_all(&dst_dir_path);
     if let Err(e) = r {
         warn!("create cache dir failed, err: {}", e);
