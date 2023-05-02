@@ -1,7 +1,7 @@
 use crate::application::app::{App, AppManager};
 use crate::application::common::get_data_path_by_app_server_id;
 use crate::application::settings::SettingsManager;
-use log::{debug, warn};
+use log::{debug, info, warn};
 use std::path::Path;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
@@ -70,7 +70,9 @@ pub fn do_launch(
         debug!("program path: {:?}", p);
         let s = Command::new(p).spawn();
         if let Err(e) = s {
-            debug!("exec failed, err: {}", e)
+            debug!("exec failed, err: {}", e);
+            return;
         }
     }
+    info!("all exec steps finished");
 }

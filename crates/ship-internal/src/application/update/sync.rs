@@ -87,7 +87,7 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                         None => {
                             let index = thread_rng().gen_range(0..task.data_nodes.len());
                             let url = format!(
-                                "{}/api/v1/download/{}",
+                                "{}/api/v1/download?file={}",
                                 task.data_nodes
                                     .get(index)
                                     .unwrap()
@@ -142,7 +142,7 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                     let mut content = "".to_string();
                     let index = thread_rng().gen_range(0..task.data_nodes.len());
                     let url = format!(
-                        "{}/api/v1/download/{}",
+                        "{}/api/v1/download?file={}",
                         task.data_nodes
                             .get(index)
                             .unwrap()
