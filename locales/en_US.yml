@@ -8,6 +8,7 @@ exit: Exit
 new_version: New Version
 open_dir: Open
 start: Start
+launch: Start
 update: Update
 introduction: Introduction
 welcome: Welcome

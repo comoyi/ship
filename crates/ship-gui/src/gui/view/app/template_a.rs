@@ -1,7 +1,7 @@
 use crate::gui::view::DEFAULT_SPACING;
 use crate::gui::Message;
 use iced::alignment::Horizontal;
-use iced::widget::{image, Button, Column, Container, Image, Row, Text};
+use iced::widget::{image, Button, Column, Container, Image, Row, Scrollable, Text};
 use iced::{theme, Length};
 use iced_aw::Card;
 use internationalization::t;
@@ -40,29 +40,38 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                     );
                     app_server_c = app_server_c.push(description_panel);
                 }
+
                 let announcement_panel = Card::new(
                     Text::new(t!("announcement")),
-                    Text::new(app_server.announcement.content.clone()),
+                    Scrollable::new(Text::new(app_server.announcement.content.clone()))
+                        .width(Length::Fill)
+                        .height(Length::Fill),
                 );
 
-                let mut banner_panel = Row::new().height(160);
+                let mut banner_panel = Column::new().spacing(2);
+                let mut have_banner = false;
                 for x in &app_server.banners {
+                    have_banner = true;
                     let banner_image = Image::new(image::Handle::from_memory(
                         fs::read(&x.image_path).unwrap_or_default(),
                     ));
                     let image_btn = Button::new(banner_image)
                         .padding(0)
                         .on_press(Message::OpenImage(x.image_path.clone()));
-                    let image_c = Container::new(image_btn).width(160).height(160);
+                    let image_c = Container::new(image_btn).width(180);
                     banner_panel = banner_panel.push(image_c);
                 }
-                let banner_c = Container::new(banner_panel);
+                let banner_c = Container::new(
+                    Scrollable::new(banner_panel)
+                        .width(Length::Fill)
+                        .height(Length::Fill),
+                );
 
                 let update_btn = Button::new(t!("update")).on_press(Message::ClickUpdate {
                     app_server_id: app_server.id,
                     app_id: app_server.app_id,
                 });
-                let start_btn = Button::new(t!("start")).on_press(Message::ClickStart {
+                let start_btn = Button::new(t!("launch")).on_press(Message::ClickStart {
                     app_server_id: app_server.id,
                     app_id: app_server.app_id,
                 });
@@ -70,10 +79,14 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                 let control_c = Container::new(control_panel)
                     .width(Length::Fill)
                     .align_x(Horizontal::Right);
-                app_server_c = app_server_c
-                    .push(announcement_panel)
-                    .push(banner_c)
-                    .push(control_c);
+                let mut app_server_info_c = Row::new()
+                    .spacing(DEFAULT_SPACING)
+                    .height(380)
+                    .push(announcement_panel);
+                if have_banner {
+                    app_server_info_c = app_server_info_c.push(banner_c);
+                }
+                app_server_c = app_server_c.push(app_server_info_c).push(control_c);
 
                 app_servers_c = app_servers_c.push(app_server_c);
             }

@@ -15,7 +15,7 @@ use std::sync::{Arc, Mutex};
 pub fn start(flags: GuiFlags) {
     let _ = Gui::run(Settings {
         window: window::Settings {
-            size: (780, 520),
+            size: (900, 600),
             position: window::Position::Centered,
             min_size: Some((500, 300)),
             resizable: true,
