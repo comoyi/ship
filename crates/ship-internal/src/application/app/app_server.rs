@@ -1,3 +1,5 @@
+pub mod launch;
+
 use crate::types::banner::Banner;
 use crate::types::common::Address;
 use std::collections::HashMap;

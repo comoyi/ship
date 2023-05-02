@@ -1,7 +1,7 @@
 use crate::gui::{Gui, Message};
 use iced::Command;
 use internationalization::DICTIONARY;
-use ship_internal::application::app::app_manage;
+use ship_internal::application::app::{app_manage, app_server};
 use ship_internal::application::update;
 use std::process;
 use std::sync::Arc;
@@ -52,7 +52,17 @@ impl Gui {
                     Arc::clone(&self.update_manager),
                 );
             }
-            Message::ClickStart => {}
+            Message::ClickStart {
+                app_server_id,
+                app_id,
+            } => {
+                app_server::launch::launch(
+                    app_server_id,
+                    app_id,
+                    Arc::clone(&self.app_manager),
+                    Arc::clone(&self.settings_manager),
+                );
+            }
             Message::OpenDir(p) => {
                 // TODO prompt when failed
                 let _ = open::that(p);

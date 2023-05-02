@@ -130,3 +130,14 @@ impl From<&request::app_server::app_server_info::DataNode> for DataNode {
         }
     }
 }
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct Launch {
+    pub steps: Vec<LaunchStep>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct LaunchStep {
+    pub command: String,
+    pub pre_time: u64,
+}

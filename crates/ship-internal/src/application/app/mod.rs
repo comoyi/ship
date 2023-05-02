@@ -1,4 +1,5 @@
 use crate::application::app::app_server::AppServerInfo;
+use crate::types::common::Launch;
 use std::collections::HashMap;
 
 pub mod app_manage;
@@ -37,6 +38,7 @@ pub struct App {
     pub name: String,
     pub code: String,
     pub priority: i64,
+    pub launch: Launch,
     pub app_server_info: AppServerInfo,
     pub selected_app_server_id: Option<u64>,
 }

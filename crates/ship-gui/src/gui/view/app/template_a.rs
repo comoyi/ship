@@ -62,7 +62,10 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                     app_server_id: app_server.id,
                     app_id: app_server.app_id,
                 });
-                let start_btn = Button::new(t!("start")).on_press(Message::ClickStart);
+                let start_btn = Button::new(t!("start")).on_press(Message::ClickStart {
+                    app_server_id: app_server.id,
+                    app_id: app_server.app_id,
+                });
                 let control_panel = Row::new().spacing(10).push(update_btn).push(start_btn);
                 let control_c = Container::new(control_panel)
                     .width(Length::Fill)

@@ -1,5 +1,6 @@
 use crate::request::error::Error;
 use crate::request::{get, get_full_url};
+use crate::types::common::Launch;
 use log::debug;
 use serde::Deserialize;
 
@@ -12,8 +13,9 @@ pub struct AppsVo {
 pub struct App {
     pub id: u64,
     pub name: String,
-    pub priority: i64,
     pub code: String,
+    pub priority: i64,
+    pub launch: Launch,
 }
 
 pub fn get_apps() -> Result<AppsVo, Error> {

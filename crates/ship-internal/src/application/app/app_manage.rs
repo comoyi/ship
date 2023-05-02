@@ -50,6 +50,7 @@ pub fn start(app_manager: Arc<Mutex<AppManager>>) -> Result<(), Error> {
             name: app_tmp.name.clone(),
             code: app_tmp.code.clone(),
             priority: app_tmp.priority,
+            launch: app_tmp.launch.clone(),
             app_server_info: AppServerInfo::new(app_servers),
             selected_app_server_id,
         };

@@ -1,4 +1,5 @@
 pub mod app;
+pub mod common;
 mod scan;
 pub mod settings;
 pub mod update;
