@@ -6,9 +6,13 @@ use crate::gui::Message;
 use iced::theme;
 use iced::widget::{Button, Column, Container, Row, Text};
 use ship_internal::application::app::{App, AppManager};
+use ship_internal::application::update::update_manage::UpdateManager;
 use std::sync::{Arc, Mutex};
 
-pub fn make_app_page(app_manager: Arc<Mutex<AppManager>>) -> Container<'static, Message> {
+pub fn make_app_page(
+    app_manager: Arc<Mutex<AppManager>>,
+    update_manager: Arc<Mutex<UpdateManager>>,
+) -> Container<'static, Message> {
     let mut tab_c = Column::new().spacing(1);
 
     let app_manager_g = app_manager.lock().unwrap();
@@ -28,7 +32,7 @@ pub fn make_app_page(app_manager: Arc<Mutex<AppManager>>) -> Container<'static, 
         tab_c = tab_c.push(app_btn);
     }
 
-    let detail_c = make_template_a_page(selected_app);
+    let detail_c = make_template_a_page(selected_app, update_manager);
 
     drop(app_manager_g);
 

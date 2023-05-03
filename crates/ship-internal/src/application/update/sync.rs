@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::{fs, io};
 use util::hash;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SyncTask {
     pub app_id: u64,
     pub sync_type: SyncTaskType,
@@ -34,7 +34,7 @@ impl SyncTask {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum SyncTaskType {
     Create,
     Update,

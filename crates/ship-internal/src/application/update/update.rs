@@ -1,19 +1,22 @@
 use crate::application::app::app_server::AppServer;
 use crate::application::app::AppManager;
 use crate::application::common::get_data_path_by_app_server_id;
-use crate::application::scan::Error;
 use crate::application::settings::SettingsManager;
 use crate::application::update::sync::{SyncTask, SyncTaskType};
 use crate::application::update::update_manage::UpdateManager;
-use crate::application::update::{TaskControlMessage, UpdateTaskControlMessage};
+use crate::application::update::{
+    Error, Progress, TaskControlMessage, UpdateTask, UpdateTaskControlMessage, UpdateTaskStatus,
+    UpdateTaskTraceMessage,
+};
 use crate::application::{scan, update};
 use crate::request;
 use crate::request::app_server::file_info::ServerFileInfoVo;
 use crate::types::common::{ClientFileInfo, DataNode, FileInfo, ServerFileInfo};
 use log::{debug, info, warn};
 use std::path::Path;
-use std::sync::mpsc::RecvTimeoutError;
+use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::sync::{mpsc, Arc, Mutex};
+use std::thread::sleep;
 use std::time::Duration;
 use std::{fs, thread};
 
@@ -30,7 +33,11 @@ pub fn handle_update_control(
 
     match message {
         UpdateTaskControlMessage::Start { app_server_id } => {
-            handle_task(app_server_id, update_manager, app_manager, settings_manager);
+            if let Err(e) =
+                handle_task(app_server_id, update_manager, app_manager, settings_manager)
+            {
+                warn!("handle update_task failed, err: {:?}", e);
+            }
         }
         UpdateTaskControlMessage::Stop { app_server_id } => {}
     }
@@ -41,13 +48,27 @@ fn handle_task(
     update_manager: Arc<Mutex<UpdateManager>>,
     app_manager: Arc<Mutex<AppManager>>,
     settings_manager: Arc<Mutex<SettingsManager>>,
-) {
+) -> Result<(), Error> {
     let mut update_manager_g = update_manager.lock().unwrap();
     let task = update_manager_g.create_task(app_server_id);
     let task_id = task.id;
-    task.tx.send(TaskControlMessage::Start);
-    update_manager_g.add_task(task);
+    task.tx
+        .send(TaskControlMessage::Start)
+        .map_err(|_| Error::SendControlMessageFailed)?;
+    // let trace_tx = task.trace_tx.clone();
+    if let Err(e) = update_manager_g.add_task(task) {
+        warn!("add update task failed, task_id: {}", task_id);
+        return Err(e);
+    }
     drop(update_manager_g);
+    let (trace_tx, trace_rx) = mpsc::channel::<UpdateTaskTraceMessage>();
+    let update_manager_2 = Arc::clone(&update_manager);
+    thread::spawn(move || {
+        watch_trace(trace_rx, app_server_id, update_manager_2);
+    });
+    trace_tx
+        .send(UpdateTaskTraceMessage::Wait)
+        .map_err(|_| Error::SendTraceMessageFailed)?;
 
     // check start
     loop {
@@ -58,7 +79,7 @@ fn handle_task(
             None => {
                 drop(update_manager_g);
                 warn!("task not exist, id: {}", task_id);
-                return;
+                return Err(Error::TaskNotExist);
             }
             Some(task) => {
                 let m_r = task.rx.try_recv();
@@ -87,13 +108,13 @@ fn handle_task(
         Ok(p) => p,
         Err(_) => {
             warn!("get_data_path_by_app_server_id failed");
-            return;
+            return Err(Error::GetDataPathFailed);
         }
     };
     debug!("app_server_id: {}, data_path: {}", app_server_id, data_path);
     if let Err(e) = fs::create_dir_all(&data_path) {
         warn!("create dir failed, path: {}", data_path);
-        return;
+        return Err(Error::CreateDirFailed);
     }
 
     let mut app_id = 0;
@@ -117,7 +138,7 @@ fn handle_task(
             "get app_server info failed, app_server_id: {}",
             app_server_id
         );
-        return;
+        return Err(Error::GetAppServerFailed);
     }
 
     // get server files
@@ -129,7 +150,7 @@ fn handle_task(
                 "get ServerFileInfo failed, app_server_id: {}, err: {:?}",
                 app_server_id, e
             );
-            return;
+            return Err(Error::GetServerFileInfoFailed);
         }
     };
 
@@ -142,7 +163,7 @@ fn handle_task(
                 "get ClientFileInfo failed, app_server_id: {}, err: {:?}",
                 app_server_id, e
             );
-            return;
+            return Err(Error::GetClientFileInfoFailed);
         }
     };
 
@@ -167,7 +188,7 @@ fn handle_task(
                 "get data_nodes failed, app_server_id: {}, err: {:?}",
                 app_server_id, e
             );
-            return;
+            return Err(Error::GetDataNodesFailed);
         }
     };
 
@@ -180,12 +201,15 @@ fn handle_task(
         &data_nodes,
     );
 
+    let total = added_files.len() + changed_files.len();
+
     let (sync_task_tx, sync_task_rx) = mpsc::channel::<SyncTask>();
+    debug!("add SyncTask to channel");
     for x in sync_tasks {
         let r = sync_task_tx.send(x);
         if let Err(e) = r {
             warn!("send SyncTask to channel failed, err: {}", e);
-            return;
+            return Err(Error::AddSyncTaskFailed);
         }
     }
     // close and rx will recv disconnect err when channel empty
@@ -200,7 +224,7 @@ fn handle_task(
             None => {
                 drop(update_manager_g);
                 warn!("task not exist, id: {}", task_id);
-                return;
+                return Err(Error::TaskNotExist);
             }
             Some(task) => {
                 let m_r = task.rx.try_recv();
@@ -220,12 +244,19 @@ fn handle_task(
         }
 
         // handle
+        debug!("get SyncTask");
         let sync_task_r = sync_task_rx.recv_timeout(Duration::from_millis(100));
         match sync_task_r {
             Ok(sync_task) => {
+                trace_tx
+                    .send(UpdateTaskTraceMessage::Processing {
+                        progress: Progress::new(0, total as u64),
+                        sync_task: sync_task.clone(),
+                    })
+                    .map_err(|_| Error::SendTraceMessageFailed)?;
                 if let Err(e) = update::sync::handle_task(sync_task) {
                     warn!("handle SyncTask failed, err: {:?}", e);
-                    return;
+                    return Err(Error::HandleSyncTaskFailed);
                 }
             }
             Err(e) => match e {
@@ -234,9 +265,70 @@ fn handle_task(
                 }
                 RecvTimeoutError::Disconnected => {
                     info!("all sync task finished, app_server_id: {}", app_server_id);
-                    return;
+                    trace_tx
+                        .send(UpdateTaskTraceMessage::Finished)
+                        .map_err(|_| Error::SendTraceMessageFailed)?;
+                    return Ok(());
                 }
             },
+        }
+    }
+
+    Ok(())
+}
+
+fn watch_trace(
+    rx: Receiver<UpdateTaskTraceMessage>,
+    app_server_id: u64,
+    update_manager: Arc<Mutex<UpdateManager>>,
+) {
+    loop {
+        thread::sleep(Duration::from_millis(1));
+        let message_r = rx.recv();
+        match message_r {
+            Ok(message) => {
+                debug!("trace: {:?}", message);
+
+                let mut update_manager_g = update_manager.lock().unwrap();
+                let task_o = update_manager_g.get_mut_update_task_by_app_server_id(app_server_id);
+                match task_o {
+                    None => {
+                        drop(update_manager_g);
+                        warn!("UpdateTask not exist, app_server_id: {}", app_server_id);
+                        break;
+                    }
+                    Some(task) => {
+                        match message {
+                            UpdateTaskTraceMessage::Wait => {
+                                task.status = UpdateTaskStatus::Wait;
+                            }
+                            UpdateTaskTraceMessage::Processing {
+                                progress,
+                                sync_task,
+                            } => {
+                                task.status = UpdateTaskStatus::Processing {
+                                    progress,
+                                    sync_task,
+                                };
+                            }
+                            UpdateTaskTraceMessage::Canceled => {
+                                task.status = UpdateTaskStatus::Canceled;
+                            }
+                            UpdateTaskTraceMessage::Failed => {
+                                task.status = UpdateTaskStatus::Failed;
+                            }
+                            UpdateTaskTraceMessage::Finished => {
+                                task.status = UpdateTaskStatus::Finished;
+                            }
+                        }
+                        drop(update_manager_g);
+                    }
+                }
+            }
+            Err(_) => {
+                debug!("watch trace exit");
+                break;
+            }
         }
     }
 }

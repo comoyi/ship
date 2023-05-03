@@ -4,12 +4,25 @@ pub mod update_manage;
 
 use crate::application::app::AppManager;
 use crate::application::scan;
+use crate::application::update::sync::SyncTask;
 use crate::application::update::update_manage::UpdateManager;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Arc, Mutex};
 
+#[derive(Debug)]
 pub enum Error {
-    AddUpdateTaskFailed,
+    SendControlMessageFailed,
+    SendTraceMessageFailed,
+
+    TaskNotExist,
+    GetDataPathFailed,
+    CreateDirFailed,
+    GetAppServerFailed,
+    GetServerFileInfoFailed,
+    GetClientFileInfoFailed,
+    GetDataNodesFailed,
+    AddSyncTaskFailed,
+    HandleSyncTaskFailed,
 }
 
 #[derive(Debug)]
@@ -28,7 +41,35 @@ pub enum TaskControlMessage {
 pub enum UpdateTaskStatus {
     #[default]
     Wait,
-    Processing,
+    Processing {
+        progress: Progress,
+        sync_task: SyncTask,
+    },
+    Canceled,
+    Failed,
+    Finished,
+}
+
+#[derive(Default, Debug)]
+pub struct Progress {
+    value: u64,
+    total: u64,
+}
+
+impl Progress {
+    pub fn new(value: u64, total: u64) -> Self {
+        Self { value, total }
+    }
+}
+
+#[derive(Default, Debug)]
+pub enum UpdateTaskTraceMessage {
+    #[default]
+    Wait,
+    Processing {
+        progress: Progress,
+        sync_task: SyncTask,
+    },
     Canceled,
     Failed,
     Finished,
@@ -41,17 +82,22 @@ pub struct UpdateTask {
     pub status: UpdateTaskStatus,
     pub tx: Sender<TaskControlMessage>,
     rx: Receiver<TaskControlMessage>,
+    trace_tx: Sender<UpdateTaskTraceMessage>,
+    trace_rx: Receiver<UpdateTaskTraceMessage>,
 }
 
 impl UpdateTask {
     pub fn new(id: u64, app_server_id: u64) -> Self {
         let (tx, rx) = mpsc::channel::<TaskControlMessage>();
+        let (trace_tx, trace_rx) = mpsc::channel::<UpdateTaskTraceMessage>();
         Self {
             id,
             app_server_id,
             status: Default::default(),
             tx,
             rx,
+            trace_tx,
+            trace_rx,
         }
     }
 }

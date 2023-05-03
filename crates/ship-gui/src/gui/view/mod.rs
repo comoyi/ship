@@ -72,7 +72,7 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
             c = c.push(page);
         }
         PageRoute::App => {
-            let page = make_app_page(Arc::clone(&s.app_manager));
+            let page = make_app_page(Arc::clone(&s.app_manager), Arc::clone(&s.update_manager));
             c = c.push(page);
         }
         PageRoute::Settings => {

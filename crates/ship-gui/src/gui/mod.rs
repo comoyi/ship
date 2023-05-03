@@ -4,13 +4,15 @@ mod view;
 use crate::gui::view::navbar::PageRoute;
 use crate::gui::view::{make_view, PageManager};
 use iced::widget::{Column, Container};
-use iced::{window, Application, Command, Element, Renderer, Settings};
+use iced::{subscription, window, Application, Command, Element, Renderer, Settings, Subscription};
 use ship_internal::application::app::AppManager;
 use ship_internal::application::settings::SettingsManager;
 use ship_internal::application::update::update_manage::UpdateManager;
 use ship_internal::version::version_manage::VersionManager;
 use ship_internal::{application, version};
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 
 pub fn start(flags: GuiFlags) {
     let _ = Gui::run(Settings {
@@ -76,6 +78,27 @@ impl Application for Gui {
         let v = make_view(&self);
         let c = Column::new().push(v);
         Container::new(c).into()
+    }
+
+    fn subscription(&self) -> Subscription<Self::Message> {
+        Subscription::batch(
+            vec![SubscriptionEvent::RefreshUi]
+                .iter()
+                .map(SubscriptionEvent::s),
+        )
+    }
+}
+
+enum SubscriptionEvent {
+    RefreshUi,
+}
+
+impl SubscriptionEvent {
+    fn s(&self) -> Subscription<Message> {
+        subscription::unfold("1", "InitData", |_| async {
+            thread::sleep(Duration::from_millis(200));
+            (Message::NoOp, "NewData")
+        })
     }
 }
 

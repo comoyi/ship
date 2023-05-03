@@ -1,15 +1,22 @@
 use crate::gui::view::DEFAULT_SPACING;
 use crate::gui::Message;
 use iced::alignment::{Horizontal, Vertical};
-use iced::widget::{image, Button, Column, Container, Image, Row, Scrollable, Text};
+use iced::widget::{image, Button, Column, Container, Image, ProgressBar, Row, Scrollable, Text};
 use iced::{theme, Length};
 use iced_aw::Card;
 use internationalization::t;
 use ship_internal::application::app::app_server::AppServer;
 use ship_internal::application::app::App;
+use ship_internal::application::update::update_manage::UpdateManager;
+use ship_internal::application::update::UpdateTaskStatus;
 use std::fs;
+use std::ops::RangeInclusive;
+use std::sync::{Arc, Mutex};
 
-pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Message> {
+pub fn make_template_a_page(
+    selected_app: Option<&App>,
+    update_manager: Arc<Mutex<UpdateManager>>,
+) -> Container<'static, Message> {
     let app = match selected_app {
         None => {
             return Container::new(Row::new());
@@ -90,9 +97,17 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                     app_id: app_server.app_id,
                 });
                 let control_panel = Row::new().spacing(10).push(start_btn).push(update_btn);
-                let control_c = Container::new(control_panel)
-                    .width(Length::Fill)
-                    .align_x(Horizontal::Left);
+                let control_c = Container::new(control_panel);
+
+                let mut bar = Row::new().spacing(DEFAULT_SPACING).push(control_c);
+
+                // progress bar
+                if let Some(progress_bar_c) =
+                    make_progress_bar(app_server.id, Arc::clone(&update_manager))
+                {
+                    bar = bar.push(progress_bar_c);
+                }
+
                 let mut app_server_info_c = Row::new()
                     .spacing(DEFAULT_SPACING)
                     .height(380)
@@ -100,7 +115,7 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                 if have_banner {
                     app_server_info_c = app_server_info_c.push(banner_c);
                 }
-                app_server_c = app_server_c.push(control_c).push(app_server_info_c);
+                app_server_c = app_server_c.push(bar).push(app_server_info_c);
 
                 app_servers_c = app_servers_c.push(app_server_c);
             }
@@ -119,4 +134,32 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
         .push(app_server_list_container)
         .push(app_servers_c);
     Container::new(c)
+}
+
+fn make_progress_bar(
+    app_server_id: u64,
+    update_manager: Arc<Mutex<UpdateManager>>,
+) -> Option<Container<'static, Message>> {
+    let mut update_manager_g = update_manager.lock().unwrap();
+    let update_task_o = update_manager_g.get_mut_update_task_by_app_server_id(app_server_id);
+    match update_task_o {
+        None => {}
+        Some(update_task) => {
+            match update_task.status {
+                UpdateTaskStatus::Wait => {}
+                UpdateTaskStatus::Processing { .. } => {}
+                UpdateTaskStatus::Canceled => {}
+                UpdateTaskStatus::Failed => {}
+                UpdateTaskStatus::Finished => {}
+            }
+
+            let progress_bar = ProgressBar::new(RangeInclusive::new(0.0, 10.0), 5.0);
+            let progress_tip = Text::new("aaa.txt");
+            let progress_panel = Column::new().push(progress_bar).push(progress_tip);
+            let progress_c = Container::new(progress_panel);
+            return Some(progress_c);
+        }
+    }
+    drop(update_manager_g);
+    None
 }

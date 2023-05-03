@@ -29,6 +29,16 @@ impl UpdateManager {
         self.update_tasks.get(&id)
     }
 
+    pub fn get_mut_update_task_by_app_server_id(
+        &mut self,
+        app_server_id: u64,
+    ) -> Option<&mut UpdateTask> {
+        self.update_tasks
+            .iter_mut()
+            .find(|(_, task)| task.app_server_id == app_server_id)
+            .map(|(_, task)| task)
+    }
+
     pub fn add_task(&mut self, update_task: UpdateTask) -> Result<(), Error> {
         let mu = self.operate_task_mutex.lock().unwrap();
         // TODO check duplicate by app_server_id
