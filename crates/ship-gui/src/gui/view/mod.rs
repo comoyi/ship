@@ -45,18 +45,25 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
     let is_show_version_tip = version_manager_g.show_tip;
     let new_version = version_manager_g.new_version.clone();
     drop(version_manager_g);
-    let version_modal = Modal::new(is_show_version_tip, "", move || {
+    let mut version_modal = Modal::new(is_show_version_tip, "", move || {
         let download_btn = Button::new(Text::new(new_version.download_text.clone()))
             .on_press(Message::OpenUrl(new_version.download_url.clone()));
-        let l_1 = Text::new(format!("{}", new_version.release_description));
-        let l_2 = Text::new(format!("{}", new_version.description));
-        let body_c = Column::new().push(download_btn).push(l_1).push(l_2);
+        let l_1 = Text::new(format!("{}", new_version.description));
+        let l_2 = Text::new(format!("{}", new_version.release_description));
+        let body_c = Column::new()
+            .spacing(10)
+            .push(download_btn)
+            .push(l_1)
+            .push(l_2);
         Card::new(Text::new(t!("new_version")), body_c)
             .max_width(300.0)
             .into()
-    })
-    .backdrop(Message::CloseVersionUpdateModal)
-    .on_esc(Message::CloseVersionUpdateModal);
+    });
+    if !new_version.force {
+        version_modal = version_modal
+            .backdrop(Message::CloseVersionUpdateModal)
+            .on_esc(Message::CloseVersionUpdateModal);
+    }
     c = c.push(version_modal);
 
     match current_route {
