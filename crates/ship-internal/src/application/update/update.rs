@@ -39,7 +39,23 @@ pub fn handle_update_control(
                 warn!("handle update_task failed, err: {:?}", e);
             }
         }
-        UpdateTaskControlMessage::Stop { app_server_id } => {}
+        UpdateTaskControlMessage::Stop { app_server_id } => {
+            let mut update_manager_g = update_manager.lock().unwrap();
+            let update_task_o =
+                update_manager_g.get_mut_update_task_by_app_server_id(app_server_id);
+            match update_task_o {
+                None => {}
+                Some(update_task) => {
+                    if let Err(e) = update_task.tx.send(TaskControlMessage::Stop) {
+                        warn!(
+                            "send TaskControlMessage::Stop to channel failed, err: {}",
+                            e
+                        );
+                    }
+                }
+            }
+            drop(update_manager_g);
+        }
     }
 }
 
@@ -234,6 +250,9 @@ fn handle_task(
                     Ok(message) => match message {
                         TaskControlMessage::Stop => {
                             debug!("get message: {:?}", message);
+                            trace_tx
+                                .send(UpdateTaskTraceMessage::Canceled)
+                                .map_err(|_| Error::SendTraceMessageFailed)?;
                             break;
                         }
 
@@ -319,13 +338,28 @@ fn watch_trace(
                                 };
                             }
                             UpdateTaskTraceMessage::Canceled => {
+                                // TODO optimize 1. add relation of app_server_id and last UpdateTask, 2.delay delete
+                                // remove from UpdateTask from update_manager
+                                let task_id = task.id;
                                 task.status = UpdateTaskStatus::Canceled;
+                                update_manager_g.update_tasks.remove(&task_id);
+
                             }
                             UpdateTaskTraceMessage::Failed => {
+                                // TODO optimize 1. add relation of app_server_id and last UpdateTask, 2.delay delete
+                                // remove from UpdateTask from update_manager
+                                let task_id = task.id;
                                 task.status = UpdateTaskStatus::Failed;
+                                update_manager_g.update_tasks.remove(&task_id);
+
                             }
                             UpdateTaskTraceMessage::Finished => {
+                                // TODO optimize 1. add relation of app_server_id and last UpdateTask, 2.delay delete
+                                // remove from UpdateTask from update_manager
+                                let task_id = task.id;
                                 task.status = UpdateTaskStatus::Finished;
+                                update_manager_g.update_tasks.remove(&task_id);
+
                             }
                         }
                         drop(update_manager_g);

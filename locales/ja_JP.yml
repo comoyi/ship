@@ -10,6 +10,7 @@ open_dir: 開く
 start: 起動
 launch: 起動
 update: 更新
+cancel_update: 更新をキャンセル
 introduction: 序文
 welcome: 歓迎
 data_dir: データフォルダ
@@ -23,3 +24,8 @@ start_status_starting: 起動
 start_status_started: 起動完了
 start_status_cancelled: キャンセル
 start_status_failed: 起動に失敗しました
+update_tip_wait: Ready to start
+update_tip_processing: 更新中
+update_tip_canceled: キャンセル
+update_tip_failed: Failed
+update_tip_finished: アップデート完了

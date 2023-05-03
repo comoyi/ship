@@ -10,6 +10,7 @@ open_dir: 打开文件夹
 start: 开始
 launch: 启动
 update: 更新
+cancel_update: 取消更新
 introduction: 简介
 welcome: 欢迎
 data_dir: 数据文件夹

@@ -52,6 +52,17 @@ impl Gui {
                     Arc::clone(&self.update_manager),
                 );
             }
+            Message::CancelUpdate {
+                app_server_id,
+                app_id,
+            } => {
+                update::stop_update(
+                    app_server_id,
+                    app_id,
+                    Arc::clone(&self.app_manager),
+                    Arc::clone(&self.update_manager),
+                );
+            }
             Message::ClickStart {
                 app_server_id,
                 app_id,

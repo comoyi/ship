@@ -74,16 +74,6 @@ pub fn make_template_a_page(
                         .height(Length::Fill),
                 );
 
-                let update_btn = Button::new(
-                    Text::new(format!("{}{}", "", t!("update")))
-                        .horizontal_alignment(Horizontal::Center)
-                        .vertical_alignment(Vertical::Center),
-                )
-                .height(40)
-                .on_press(Message::ClickUpdate {
-                    app_server_id: app_server.id,
-                    app_id: app_server.app_id,
-                });
                 let start_btn = Button::new(
                     Text::new(format!("{}{}", "", t!("launch")))
                         .horizontal_alignment(Horizontal::Center)
@@ -96,6 +86,43 @@ pub fn make_template_a_page(
                     app_server_id: app_server.id,
                     app_id: app_server.app_id,
                 });
+
+                let mut update_manager_g = update_manager.lock().unwrap();
+                let update_task_o =
+                    update_manager_g.get_mut_update_task_by_app_server_id(app_server.id);
+                let mut update_text = t!("update");
+                let mut update_processing = false;
+                match update_task_o {
+                    None => {}
+                    Some(update_task) => match update_task.status {
+                        UpdateTaskStatus::Wait | UpdateTaskStatus::Processing { .. } => {
+                            update_processing = true;
+                        }
+                        _ => {}
+                    },
+                }
+                drop(update_manager_g);
+                if update_processing {
+                    update_text = t!("cancel_update");
+                }
+
+                let mut update_btn = Button::new(
+                    Text::new(format!("{}{}", "", update_text))
+                        .horizontal_alignment(Horizontal::Center)
+                        .vertical_alignment(Vertical::Center),
+                )
+                .height(40);
+                if update_processing {
+                    update_btn = update_btn.on_press(Message::CancelUpdate {
+                        app_server_id: app_server.id,
+                        app_id: app_server.app_id,
+                    });
+                } else {
+                    update_btn = update_btn.on_press(Message::ClickUpdate {
+                        app_server_id: app_server.id,
+                        app_id: app_server.app_id,
+                    });
+                }
                 let control_panel = Row::new().spacing(10).push(start_btn).push(update_btn);
                 let control_c = Container::new(control_panel);
 
@@ -145,7 +172,7 @@ fn make_progress_bar(
     match update_task_o {
         None => {}
         Some(update_task) => {
-            let mut tip = "".to_string();
+            let tip;
             let mut total = 0;
             let mut value = 0;
             match &update_task.status {
@@ -172,12 +199,14 @@ fn make_progress_bar(
                     tip = format!("{}", t!("update_tip_failed"));
                 }
                 UpdateTaskStatus::Finished => {
+                    total = 100; // 100%
+                    value = total;
                     tip = format!("{}", t!("update_tip_finished"));
                 }
             }
 
             let progress_bar =
-                ProgressBar::new(RangeInclusive::new(0.0, total as f32), value as f32);
+                ProgressBar::new(RangeInclusive::new(0.0, total as f32), value as f32).height(10);
             let progress_tip = Text::new(tip);
             let progress_panel = Column::new().push(progress_bar).push(progress_tip);
             let progress_c = Container::new(progress_panel);
