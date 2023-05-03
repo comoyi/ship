@@ -2942,6 +2942,7 @@ dependencies = [
  "internationalization",
  "open",
  "ship-internal",
+ "util",
 ]
 
 [[package]]

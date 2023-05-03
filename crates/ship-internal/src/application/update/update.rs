@@ -215,6 +215,7 @@ fn handle_task(
     // close and rx will recv disconnect err when channel empty
     drop(sync_task_tx);
 
+    let mut count = 0; // exclude deleted SyncTask (added + changed)
     loop {
         thread::sleep(Duration::from_millis(10));
 
@@ -248,9 +249,15 @@ fn handle_task(
         let sync_task_r = sync_task_rx.recv_timeout(Duration::from_millis(100));
         match sync_task_r {
             Ok(sync_task) => {
+                match sync_task.sync_type {
+                    SyncTaskType::Create | SyncTaskType::Update => {
+                        count += 1;
+                    }
+                    _ => {}
+                }
                 trace_tx
                     .send(UpdateTaskTraceMessage::Processing {
-                        progress: Progress::new(0, total as u64),
+                        progress: Progress::new(count, total as u64),
                         sync_task: sync_task.clone(),
                     })
                     .map_err(|_| Error::SendTraceMessageFailed)?;

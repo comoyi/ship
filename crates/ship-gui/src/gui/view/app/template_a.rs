@@ -145,16 +145,40 @@ fn make_progress_bar(
     match update_task_o {
         None => {}
         Some(update_task) => {
-            match update_task.status {
-                UpdateTaskStatus::Wait => {}
-                UpdateTaskStatus::Processing { .. } => {}
-                UpdateTaskStatus::Canceled => {}
-                UpdateTaskStatus::Failed => {}
-                UpdateTaskStatus::Finished => {}
+            let mut tip = "".to_string();
+            let mut total = 0;
+            let mut value = 0;
+            match &update_task.status {
+                UpdateTaskStatus::Wait => {
+                    tip = format!("{}", t!("update_tip_wait"));
+                }
+                UpdateTaskStatus::Processing {
+                    progress,
+                    sync_task,
+                } => {
+                    tip = format!(
+                        "{} {} {}",
+                        t!("update_tip_processing"),
+                        util::convert::file_size::simple_format(sync_task.file_info.size),
+                        sync_task.file_info.relative_path
+                    );
+                    total = progress.total;
+                    value = progress.value;
+                }
+                UpdateTaskStatus::Canceled => {
+                    tip = format!("{}", t!("update_tip_canceled"));
+                }
+                UpdateTaskStatus::Failed => {
+                    tip = format!("{}", t!("update_tip_failed"));
+                }
+                UpdateTaskStatus::Finished => {
+                    tip = format!("{}", t!("update_tip_finished"));
+                }
             }
 
-            let progress_bar = ProgressBar::new(RangeInclusive::new(0.0, 10.0), 5.0);
-            let progress_tip = Text::new("aaa.txt");
+            let progress_bar =
+                ProgressBar::new(RangeInclusive::new(0.0, total as f32), value as f32);
+            let progress_tip = Text::new(tip);
             let progress_panel = Column::new().push(progress_bar).push(progress_tip);
             let progress_c = Container::new(progress_panel);
             return Some(progress_c);

@@ -52,8 +52,8 @@ pub enum UpdateTaskStatus {
 
 #[derive(Default, Debug)]
 pub struct Progress {
-    value: u64,
-    total: u64,
+    pub value: u64,
+    pub total: u64,
 }
 
 impl Progress {
