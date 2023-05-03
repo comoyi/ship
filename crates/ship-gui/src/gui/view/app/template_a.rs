@@ -67,19 +67,18 @@ pub fn make_template_a_page(selected_app: Option<&App>) -> Container<'static, Me
                         .height(Length::Fill),
                 );
 
-                let update_btn =
-                    Button::new(
-                        Text::new(t!("update"))
-                            .horizontal_alignment(Horizontal::Center)
-                            .vertical_alignment(Vertical::Center),
-                    )
-                        .height(40)
-                        .on_press(Message::ClickUpdate {
-                            app_server_id: app_server.id,
-                            app_id: app_server.app_id,
-                        });
+                let update_btn = Button::new(
+                    Text::new(format!("{}{}", "", t!("update")))
+                        .horizontal_alignment(Horizontal::Center)
+                        .vertical_alignment(Vertical::Center),
+                )
+                .height(40)
+                .on_press(Message::ClickUpdate {
+                    app_server_id: app_server.id,
+                    app_id: app_server.app_id,
+                });
                 let start_btn = Button::new(
-                    Text::new(t!("launch"))
+                    Text::new(format!("{}{}", "", t!("launch")))
                         .horizontal_alignment(Horizontal::Center)
                         .vertical_alignment(Vertical::Center),
                 )
