@@ -29,6 +29,13 @@ impl UpdateManager {
         self.update_tasks.get(&id)
     }
 
+    pub fn get_update_task_by_app_server_id(&self, app_server_id: u64) -> Option<&UpdateTask> {
+        self.update_tasks
+            .iter()
+            .find(|(_, task)| task.app_server_id == app_server_id)
+            .map(|(_, task)| task)
+    }
+
     pub fn get_mut_update_task_by_app_server_id(
         &mut self,
         app_server_id: u64,

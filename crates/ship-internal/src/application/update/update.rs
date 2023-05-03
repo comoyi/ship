@@ -33,6 +33,18 @@ pub fn handle_update_control(
 
     match message {
         UpdateTaskControlMessage::Start { app_server_id } => {
+            // remove last UpdateTask by app_server_id, if exist
+            let mut update_manager_g = update_manager.lock().unwrap();
+            let update_task_o = update_manager_g.get_update_task_by_app_server_id(app_server_id);
+            match update_task_o {
+                None => {}
+                Some(update_task) => {
+                    let id = update_task.id;
+                    update_manager_g.update_tasks.remove(&id);
+                }
+            }
+            drop(update_manager_g);
+
             if let Err(e) =
                 handle_task(app_server_id, update_manager, app_manager, settings_manager)
             {
@@ -338,28 +350,13 @@ fn watch_trace(
                                 };
                             }
                             UpdateTaskTraceMessage::Canceled => {
-                                // TODO optimize 1. add relation of app_server_id and last UpdateTask, 2.delay delete
-                                // remove from UpdateTask from update_manager
-                                let task_id = task.id;
                                 task.status = UpdateTaskStatus::Canceled;
-                                update_manager_g.update_tasks.remove(&task_id);
-
                             }
                             UpdateTaskTraceMessage::Failed => {
-                                // TODO optimize 1. add relation of app_server_id and last UpdateTask, 2.delay delete
-                                // remove from UpdateTask from update_manager
-                                let task_id = task.id;
                                 task.status = UpdateTaskStatus::Failed;
-                                update_manager_g.update_tasks.remove(&task_id);
-
                             }
                             UpdateTaskTraceMessage::Finished => {
-                                // TODO optimize 1. add relation of app_server_id and last UpdateTask, 2.delay delete
-                                // remove from UpdateTask from update_manager
-                                let task_id = task.id;
                                 task.status = UpdateTaskStatus::Finished;
-                                update_manager_g.update_tasks.remove(&task_id);
-
                             }
                         }
                         drop(update_manager_g);
