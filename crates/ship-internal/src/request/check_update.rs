@@ -15,7 +15,7 @@ pub fn check_update() -> Result<CheckUpdateVo, Error> {
     let resp = get(&url)?;
     let body = resp.text().map_err(|_| Error::ReadBodyError)?;
     debug!("url: {}, body: {}", url, body);
-    let mut data = serde_json::from_str::<CheckUpdateVo>(&body).map_err(|e| {
+    let data = serde_json::from_str::<CheckUpdateVo>(&body).map_err(|e| {
         debug!("decode failed, err: {}", e);
         Error::DecodeError
     })?;

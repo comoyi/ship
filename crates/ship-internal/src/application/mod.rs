@@ -10,7 +10,6 @@ use crate::application::update::update_manage;
 use crate::application::update::update_manage::UpdateManager;
 use crate::config::CONFIG;
 use crate::log::init_log;
-use crate::request;
 use crate::version::version_manage;
 use crate::version::version_manage::VersionManager;
 use internationalization::DICTIONARY;

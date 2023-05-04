@@ -1,22 +1,19 @@
-use crate::application::app::app_server::AppServer;
 use crate::application::app::AppManager;
 use crate::application::common::get_data_path_by_app_server_id;
 use crate::application::settings::SettingsManager;
 use crate::application::update::sync::{SyncTask, SyncTaskType};
 use crate::application::update::update_manage::UpdateManager;
 use crate::application::update::{
-    Error, Progress, TaskControlMessage, UpdateTask, UpdateTaskControlMessage, UpdateTaskStatus,
+    Error, Progress, TaskControlMessage, UpdateTaskControlMessage, UpdateTaskStatus,
     UpdateTaskTraceMessage,
 };
 use crate::application::{scan, update};
 use crate::request;
-use crate::request::app_server::file_info::ServerFileInfoVo;
 use crate::types::common::{ClientFileInfo, DataNode, FileInfo, ServerFileInfo};
 use log::{debug, info, warn};
 use std::path::Path;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::sync::{mpsc, Arc, Mutex};
-use std::thread::sleep;
 use std::time::Duration;
 use std::{fs, thread};
 
@@ -147,7 +144,7 @@ fn do_handle_task(
         }
     };
     debug!("app_server_id: {}, data_path: {}", app_server_id, data_path);
-    if let Err(e) = fs::create_dir_all(&data_path) {
+    if let Err(_) = fs::create_dir_all(&data_path) {
         warn!("create dir failed, path: {}", data_path);
         return Err(Error::CreateDirFailed);
     }
@@ -216,9 +213,8 @@ fn do_handle_task(
     );
     print_diff_detail(&sfi, &cfi, &added_files, &changed_files, &deleted_files);
 
-    let data_nodes: Vec<DataNode>;
     let app_server_info_r = request::app_server::app_server_info::get_app_server_info(&address);
-    let data_nodes: Vec<_> = match app_server_info_r {
+    let data_nodes = match app_server_info_r {
         Ok(app_server_info) => app_server_info
             .data_nodes
             .iter()

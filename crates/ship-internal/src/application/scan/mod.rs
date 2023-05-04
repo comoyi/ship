@@ -67,7 +67,7 @@ pub fn scan(base_path: &str) -> Result<ClientFileInfo, Error> {
                     continue;
                 }
 
-                let mut file = FileInfo::new(&relative_path, file_type, size, &hash_sum);
+                let file = FileInfo::new(&relative_path, file_type, size, &hash_sum);
                 debug!(
                     "abs_path: {}, rel_path: {}, file: {:?}",
                     absolute_path, relative_path, file

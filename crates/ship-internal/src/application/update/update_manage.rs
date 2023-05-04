@@ -5,7 +5,7 @@ use crate::application::update::{Error, UpdateTask, UpdateTaskControlMessage, Up
 use log::{debug, warn};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::mpsc::{Receiver, RecvError, Sender, TryRecvError};
+use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;

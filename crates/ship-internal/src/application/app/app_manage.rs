@@ -2,10 +2,8 @@ use crate::application::app::app_server::{AppServer, AppServerInfo, AppServers};
 use crate::application::app::{App, AppManager, Apps};
 use crate::request;
 use crate::request::app_server::announcement::AnnouncementVo;
-use crate::request::app_server::banner::BannerVo;
 use crate::types::banner::Banner;
-use log::{debug, warn};
-use reqwest::get;
+use log::warn;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -206,7 +204,6 @@ enum DownloadImageError {
     ReadDownloadContentFailed,
     WriteDownloadContentFailed,
     RenameFileFailed,
-    CalcFileHashSumFailed,
     ConvertPathToStringFailed,
 }
 
@@ -238,28 +235,24 @@ fn get_local_image_path(
 
     let tmp_file_name = format!("tmp_{}", chrono::Utc::now().timestamp());
     let tmp_file_path = banner_base_path.join(tmp_file_name);
-    let mut resp = reqwest::blocking::get(url).map_err(|e| DownloadImageError::DownloadFailed)?;
-    let f = fs::File::create(&tmp_file_path).map_err(|e| DownloadImageError::CreateFileFailed)?;
+    let mut resp = reqwest::blocking::get(url).map_err(|_| DownloadImageError::DownloadFailed)?;
+    let f = fs::File::create(&tmp_file_path).map_err(|_| DownloadImageError::CreateFileFailed)?;
     let mut writer = io::BufWriter::new(f);
     let mut buf = [0; 1024 * 1024];
     loop {
         let n = resp
             .read(&mut buf)
-            .map_err(|e| DownloadImageError::ReadDownloadContentFailed)?;
+            .map_err(|_| DownloadImageError::ReadDownloadContentFailed)?;
         if n == 0 {
             break;
         }
         writer
             .write(&buf[..n])
-            .map_err(|e| DownloadImageError::WriteDownloadContentFailed)?;
+            .map_err(|_| DownloadImageError::WriteDownloadContentFailed)?;
     }
     writer
         .flush()
-        .map_err(|e| DownloadImageError::CreateFileFailed)?;
-    // hash by file
-    // let file_name =
-    //     md5::md5_file(&tmp_file_path).map_err(|_| DownloadImageError::CalcFileHashSumFailed)?;
-    // let full_file_path = banner_base_path.join(file_name);
+        .map_err(|_| DownloadImageError::CreateFileFailed)?;
     fs::rename(&tmp_file_path, &full_file_path)
         .map_err(|_| DownloadImageError::RenameFileFailed)?;
     Ok(full_file_path

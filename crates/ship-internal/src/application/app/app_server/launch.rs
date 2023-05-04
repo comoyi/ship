@@ -1,4 +1,4 @@
-use crate::application::app::{App, AppManager};
+use crate::application::app::AppManager;
 use crate::application::common::get_data_path_by_app_server_id;
 use crate::application::settings::SettingsManager;
 use log::{debug, info, warn};

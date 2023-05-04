@@ -58,7 +58,6 @@ pub enum SyncError {
     DeleteFailed,
     UnknownFileType,
     CheckExistsFailed,
-    Other,
 }
 
 pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
@@ -96,34 +95,34 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                                 task.file_info.relative_path
                             );
                             let mut resp = reqwest::blocking::get(url)
-                                .map_err(|e| SyncError::DownloadFailed)?;
+                                .map_err(|_| SyncError::DownloadFailed)?;
                             let f = fs::File::create(&full_file_path)
-                                .map_err(|e| SyncError::CreateFileFailed)?;
+                                .map_err(|_| SyncError::CreateFileFailed)?;
                             let mut writer = io::BufWriter::new(f);
                             let mut buf = [0; 1024 * 1024];
                             loop {
                                 let n = resp
                                     .read(&mut buf)
-                                    .map_err(|e| SyncError::ReadDownloadContentFailed)?;
+                                    .map_err(|_| SyncError::ReadDownloadContentFailed)?;
                                 if n == 0 {
                                     break;
                                 }
                                 writer
                                     .write(&buf[..n])
-                                    .map_err(|e| SyncError::WriteDownloadContentFailed)?;
+                                    .map_err(|_| SyncError::WriteDownloadContentFailed)?;
                             }
-                            writer.flush().map_err(|e| SyncError::CreateFileFailed)?;
+                            writer.flush().map_err(|_| SyncError::CreateFileFailed)?;
                             check_hash(&task, &full_file_path)?;
                             cache::add_to_cache(&full_file_path, task.app_id)
-                                .map_err(|e| SyncError::AddToCacheFailed)?;
+                                .map_err(|_| SyncError::AddToCacheFailed)?;
                         }
                         Some(cache_file) => {
                             let cache_dir = cache::get_update_cache_dir_path()
-                                .map_err(|e| SyncError::SyncFromCacheError)?;
+                                .map_err(|_| SyncError::SyncFromCacheError)?;
                             let cache_file_path =
                                 Path::new(&cache_dir).join(cache_file.relative_path);
                             fs::copy(cache_file_path, &full_file_path)
-                                .map_err(|e| SyncError::SyncFromCacheError)?;
+                                .map_err(|_| SyncError::SyncFromCacheError)?;
                             check_hash(&task, &full_file_path)?;
                         }
                     }
@@ -154,7 +153,7 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                     match resp_r {
                         Ok(mut resp) => {
                             let read_r = resp.read_to_string(&mut content);
-                            if let Err(e) = read_r {
+                            if let Err(_) = read_r {
                                 return Err(SyncError::ReadDownloadContentFailed);
                             }
                         }
@@ -200,7 +199,7 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
 fn check_hash(task: &SyncTask, full_file_path: &PathBuf) -> Result<bool, SyncError> {
     // check hash
     let hash_sum =
-        hash::md5::md5_file(&full_file_path).map_err(|e| SyncError::HashSumSyncedFileError)?;
+        hash::md5::md5_file(&full_file_path).map_err(|_| SyncError::HashSumSyncedFileError)?;
     if task.file_info.hash != hash_sum {
         warn!(
             "synced file hash != file info hash, hash: {}, file_info: {:?}",

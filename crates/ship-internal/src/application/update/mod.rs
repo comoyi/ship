@@ -2,8 +2,6 @@ mod sync;
 mod update;
 pub mod update_manage;
 
-use crate::application::app::AppManager;
-use crate::application::scan;
 use crate::application::update::sync::SyncTask;
 use crate::application::update::update_manage::UpdateManager;
 use std::sync::mpsc::{Receiver, Sender};
