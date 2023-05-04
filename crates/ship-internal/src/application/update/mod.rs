@@ -41,6 +41,8 @@ pub enum TaskControlMessage {
 pub enum UpdateTaskStatus {
     #[default]
     Wait,
+    GetServerUpdateInfo,
+    GetClientFileInfo,
     Processing {
         progress: Progress,
         sync_task: SyncTask,
@@ -68,6 +70,8 @@ impl Progress {
 pub enum UpdateTaskTraceMessage {
     #[default]
     Wait,
+    GetServerUpdateInfo,
+    GetClientFileInfo,
     Processing {
         progress: Progress,
         sync_task: SyncTask,
@@ -86,48 +90,29 @@ pub struct UpdateTask {
     pub status: UpdateTaskStatus,
     pub tx: Sender<TaskControlMessage>,
     rx: Receiver<TaskControlMessage>,
-    trace_tx: Sender<UpdateTaskTraceMessage>,
-    trace_rx: Receiver<UpdateTaskTraceMessage>,
 }
 
 impl UpdateTask {
     pub fn new(id: u64, app_server_id: u64) -> Self {
         let (tx, rx) = mpsc::channel::<TaskControlMessage>();
-        let (trace_tx, trace_rx) = mpsc::channel::<UpdateTaskTraceMessage>();
         Self {
             id,
             app_server_id,
             status: Default::default(),
             tx,
             rx,
-            trace_tx,
-            trace_rx,
         }
     }
 }
 
-pub fn start_update(
-    app_server_id: u64,
-    app_id: u64,
-    app_manager: Arc<Mutex<AppManager>>,
-    update_manager: Arc<Mutex<UpdateManager>>,
-) {
-    // let app_manager_g = app_manager.lock().unwrap();
-    // // let app_server = app_manager_g.apps.get(&app_id);
-    // drop(app_manager_g);
-
-    let mut update_manager_g = update_manager.lock().unwrap();
+pub fn start_update(app_server_id: u64, update_manager: Arc<Mutex<UpdateManager>>) {
+    let update_manager_g = update_manager.lock().unwrap();
     update_manager_g.start_task(app_server_id);
     drop(update_manager_g);
 }
 
-pub fn stop_update(
-    app_server_id: u64,
-    app_id: u64,
-    app_manager: Arc<Mutex<AppManager>>,
-    update_manager: Arc<Mutex<UpdateManager>>,
-) {
-    let mut update_manager_g = update_manager.lock().unwrap();
+pub fn stop_update(app_server_id: u64, update_manager: Arc<Mutex<UpdateManager>>) {
+    let update_manager_g = update_manager.lock().unwrap();
     update_manager_g.stop_task(app_server_id);
     drop(update_manager_g);
 }

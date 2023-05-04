@@ -114,7 +114,7 @@ pub enum Message {
 
     SelectApp(u64),
     SelectAppServer(u64, u64),
-    ClickUpdate { app_server_id: u64, app_id: u64 },
+    StartUpdate { app_server_id: u64, app_id: u64 },
     CancelUpdate { app_server_id: u64, app_id: u64 },
     ClickStart { app_server_id: u64, app_id: u64 },
 

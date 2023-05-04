@@ -25,6 +25,8 @@ start_status_started: 起動完了
 start_status_cancelled: キャンセル
 start_status_failed: 起動に失敗しました
 update_tip_wait: Ready to start
+update_tip_get_server_update_info: Get Server Update Info
+update_tip_get_client_file_info: Get local file info
 update_tip_processing: 更新中
 update_tip_canceled: キャンセル
 update_tip_failed: Failed

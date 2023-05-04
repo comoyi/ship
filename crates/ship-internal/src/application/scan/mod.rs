@@ -80,7 +80,7 @@ pub fn scan(base_path: &str) -> Result<ClientFileInfo, Error> {
         }
     }
 
-    let mut cfi: ClientFileInfo =
+    let cfi: ClientFileInfo =
         ClientFileInfo::new(ScanStatus::Completed, Local::now().timestamp(), files);
 
     debug!("ClientFileInfo: {:?}", cfi);

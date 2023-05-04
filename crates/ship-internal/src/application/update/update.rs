@@ -122,28 +122,14 @@ fn do_handle_task(
     // check start
     loop {
         thread::sleep(Duration::from_millis(100));
-        let update_manager_g = update_manager.lock().unwrap();
-        let task_o = update_manager_g.get_update_task_by_id(task_id);
-        match task_o {
-            None => {
-                drop(update_manager_g);
-                warn!("task not exist, id: {}", task_id);
-                return Err(Error::TaskNotExist);
-            }
-            Some(task) => {
-                let m_r = task.rx.try_recv();
-                drop(update_manager_g);
-                match m_r {
-                    Ok(message) => match message {
-                        TaskControlMessage::Start => {
-                            debug!("get message: {:?}", message);
-                            break;
-                        }
-
-                        _ => {}
-                    },
-                    Err(_) => {}
+        let m_o = get_control_message(task_id, Arc::clone(&update_manager))?;
+        if let Some(message) = m_o {
+            match message {
+                TaskControlMessage::Start => {
+                    debug!("get message: {:?}", message);
+                    break;
                 }
+                _ => {}
             }
         }
     }
@@ -191,6 +177,9 @@ fn do_handle_task(
     }
 
     // get server files
+    trace_tx
+        .send(UpdateTaskTraceMessage::GetServerUpdateInfo)
+        .map_err(|_| Error::SendTraceMessageFailed)?;
     let sfi_r = request::app_server::file_info::get_file_info(&address);
     let sfi = match sfi_r {
         Ok(x) => ServerFileInfo::from(&x),
@@ -204,6 +193,9 @@ fn do_handle_task(
     };
 
     // scan local files
+    trace_tx
+        .send(UpdateTaskTraceMessage::GetClientFileInfo)
+        .map_err(|_| Error::SendTraceMessageFailed)?;
     let cfi_r = scan::scan(&data_path);
     let cfi = match cfi_r {
         Ok(x) => x,
@@ -268,31 +260,17 @@ fn do_handle_task(
     loop {
         thread::sleep(Duration::from_millis(10));
 
-        let update_manager_g = update_manager.lock().unwrap();
-        let task_o = update_manager_g.get_update_task_by_id(task_id);
-        match task_o {
-            None => {
-                drop(update_manager_g);
-                warn!("task not exist, id: {}", task_id);
-                return Err(Error::TaskNotExist);
-            }
-            Some(task) => {
-                let m_r = task.rx.try_recv();
-                drop(update_manager_g);
-                match m_r {
-                    Ok(message) => match message {
-                        TaskControlMessage::Stop => {
-                            debug!("get message: {:?}", message);
-                            trace_tx
-                                .send(UpdateTaskTraceMessage::Canceled)
-                                .map_err(|_| Error::SendTraceMessageFailed)?;
-                            break;
-                        }
-
-                        _ => {}
-                    },
-                    Err(_) => {}
+        let m_o = get_control_message(task_id, Arc::clone(&update_manager))?;
+        if let Some(message) = m_o {
+            match message {
+                TaskControlMessage::Stop => {
+                    debug!("get message: {:?}", message);
+                    trace_tx
+                        .send(UpdateTaskTraceMessage::Canceled)
+                        .map_err(|_| Error::SendTraceMessageFailed)?;
+                    break;
                 }
+                _ => {}
             }
         }
 
@@ -338,6 +316,29 @@ fn do_handle_task(
     Ok(())
 }
 
+fn get_control_message(
+    task_id: u64,
+    update_manager: Arc<Mutex<UpdateManager>>,
+) -> Result<Option<TaskControlMessage>, Error> {
+    let update_manager_g = update_manager.lock().unwrap();
+    let task_o = update_manager_g.get_update_task_by_id(task_id);
+    match task_o {
+        None => {
+            drop(update_manager_g);
+            warn!("task not exist, id: {}", task_id);
+            return Err(Error::TaskNotExist);
+        }
+        Some(task) => {
+            let m_r = task.rx.try_recv();
+            drop(update_manager_g);
+            if let Ok(m) = m_r {
+                return Ok(Some(m));
+            }
+        }
+    }
+    Ok(None)
+}
+
 fn watch_trace(
     rx: Receiver<UpdateTaskTraceMessage>,
     app_server_id: u64,
@@ -362,6 +363,12 @@ fn watch_trace(
                         match message {
                             UpdateTaskTraceMessage::Wait => {
                                 task.status = UpdateTaskStatus::Wait;
+                            }
+                            UpdateTaskTraceMessage::GetServerUpdateInfo => {
+                                task.status = UpdateTaskStatus::GetServerUpdateInfo;
+                            }
+                            UpdateTaskTraceMessage::GetClientFileInfo => {
+                                task.status = UpdateTaskStatus::GetClientFileInfo;
                             }
                             UpdateTaskTraceMessage::Processing {
                                 progress,

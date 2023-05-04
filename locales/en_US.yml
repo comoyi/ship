@@ -25,6 +25,8 @@ start_status_started: Started
 start_status_cancelled: Cancelled
 start_status_failed: Failed
 update_tip_wait: Ready to start
+update_tip_get_server_update_info: Get server update info
+update_tip_get_client_file_info: Get local file info
 update_tip_processing: Processing
 update_tip_canceled: Canceled
 update_tip_failed: Failed

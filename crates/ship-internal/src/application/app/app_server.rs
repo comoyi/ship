@@ -2,6 +2,7 @@ pub mod launch;
 
 use crate::types::banner::Banner;
 use crate::types::common::Address;
+use crate::types::launch::LaunchStatus;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -27,6 +28,7 @@ pub struct AppServer {
     pub announcement: Announcement,
     pub banners: Vec<Banner>,
     pub priority: i64,
+    pub launch_status: LaunchStatus,
 }
 
 impl AppServer {
@@ -47,6 +49,7 @@ impl AppServer {
             announcement: Default::default(),
             banners: Default::default(),
             priority,
+            launch_status: Default::default(),
         }
     }
 

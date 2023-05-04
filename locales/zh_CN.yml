@@ -25,6 +25,8 @@ start_status_started: 启动成功
 start_status_cancelled: 已取消
 start_status_failed: 执行失败
 update_tip_wait: 准备开始更新
+update_tip_get_server_update_info: 正在获取服务端更新信息
+update_tip_get_client_file_info: 正在查询本地数据信息
 update_tip_processing: 更新中
 update_tip_canceled: 已取消
 update_tip_failed: 更新失败

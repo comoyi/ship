@@ -112,7 +112,7 @@ pub fn make_template_a_page(
                         app_id: app_server.app_id,
                     });
                 } else {
-                    update_btn = update_btn.on_press(Message::ClickUpdate {
+                    update_btn = update_btn.on_press(Message::StartUpdate {
                         app_server_id: app_server.id,
                         app_id: app_server.app_id,
                     });
@@ -172,6 +172,12 @@ fn make_progress_bar(
             match &update_task.status {
                 UpdateTaskStatus::Wait => {
                     tip = format!("{}", t!("update_tip_wait"));
+                }
+                UpdateTaskStatus::GetServerUpdateInfo => {
+                    tip = format!("{}", t!("update_tip_get_server_update_info"));
+                }
+                UpdateTaskStatus::GetClientFileInfo => {
+                    tip = format!("{}", t!("update_tip_get_client_file_info"));
                 }
                 UpdateTaskStatus::Processing {
                     progress,

@@ -61,7 +61,7 @@ impl UpdateManager {
         Ok(())
     }
 
-    pub fn start_task(&mut self, app_server_id: u64) -> Result<(), Error> {
+    pub fn start_task(&self, app_server_id: u64) -> Result<(), Error> {
         let update_task_control_message = UpdateTaskControlMessage::Start { app_server_id };
         let r = self.tx.send(update_task_control_message);
         if let Err(e) = r {
