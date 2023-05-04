@@ -1,0 +1,15 @@
+[package]
+name = "ship-gui"
+version = "0.1.0"
+authors = ["Michael Chi <chicong@outlook.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+internationalization = { path = "../internationalization" }
+util = { path = "../util" }
+ship-internal = { path = "../ship-internal" }
+iced = { version = "0.9.0", features = ["image", "palette"] }
+iced_aw = { version = "0.5.0", default-features = false, features = ["modal", "card"] }
+open = "4.1.0"
