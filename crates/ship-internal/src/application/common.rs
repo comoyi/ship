@@ -14,22 +14,22 @@ pub fn get_data_path_by_app_server_id<'a>(
         .data_dir_path
         .clone();
     drop(settings_manager_g);
-    let (app_id, app_dir_name) = get_app_data(app_server_id, app_manager)?;
+    let (app_id, app_code, app_dir_name) = get_app_data(app_server_id, app_manager)?;
     Ok(format!(
         "{}/{}/{}/{}/{}",
-        base_path, app_dir_name, app_id, app_server_id, app_dir_name
+        base_path, app_code, app_id, app_server_id, app_dir_name
     ))
 }
 
 fn get_app_data<'a>(
     app_server_id: u64,
     app_manager: Arc<Mutex<AppManager>>,
-) -> Result<(u64, String), &'a str> {
+) -> Result<(u64, String, String), &'a str> {
     let app_manager_g = app_manager.lock().unwrap();
     for (_, app_tmp) in &app_manager_g.apps {
         for (_, app_server_tmp) in &app_tmp.app_server_info.servers {
             if app_server_tmp.id == app_server_id {
-                return Ok((app_tmp.id, app_tmp.code.clone()));
+                return Ok((app_tmp.id, app_tmp.code.clone(), app_tmp.dir_name.clone()));
             }
         }
     }

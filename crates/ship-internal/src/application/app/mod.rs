@@ -37,6 +37,7 @@ pub struct App {
     pub id: u64,
     pub name: String,
     pub code: String,
+    pub dir_name: String,
     pub priority: i64,
     pub launch: Launch,
     pub app_server_info: AppServerInfo,
