@@ -1,5 +1,6 @@
 use crate::request::error::Error;
 use crate::request::{get, get_full_url};
+use crate::version;
 use crate::version::version_manage::NewVersionInfo;
 use log::debug;
 use serde::Deserialize;
@@ -11,7 +12,11 @@ pub struct CheckUpdateVo {
 
 pub fn check_update() -> Result<CheckUpdateVo, Error> {
     debug!("check_update");
-    let url = get_full_url("/api/v1/version/check");
+    let url = get_full_url(&format!(
+        "{}?version_no={}",
+        "/api/v1/version/check",
+        version::VERSION_NO
+    ));
     let resp = get(&url)?;
     let body = resp.text().map_err(|_| Error::ReadBodyError)?;
     debug!("url: {}, body: {}", url, body);
