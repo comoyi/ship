@@ -30,7 +30,9 @@ pub fn make_nav_bar(current_route: &PageRoute) -> Container<'static, Message> {
     for mut item in items {
         if let Some(r) = &item.route {
             if current_route == r {
-                item.content = item.content.style(theme::Button::Positive);
+                item.content = item.content.style(theme::Button::Custom(Box::new(
+                    crate::theme::Button::Selected,
+                )));
             }
         }
         l = l.push(item.content);

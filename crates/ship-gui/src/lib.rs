@@ -1,5 +1,5 @@
 mod gui;
-mod theme;
+pub mod theme;
 
 pub use gui::start;
 pub use gui::GuiFlags;

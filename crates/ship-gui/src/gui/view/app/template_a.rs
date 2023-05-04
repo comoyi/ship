@@ -24,7 +24,7 @@ pub fn make_template_a_page(
         Some(app) => app,
     };
 
-    let mut app_server_list = Column::new().spacing(1);
+    let mut app_server_list = Column::new().spacing(1).max_width(150);
     let mut app_servers_c = Column::new();
 
     let mut map_vec: Vec<(&u64, &AppServer)> = app.app_server_info.servers.iter().collect();
@@ -33,11 +33,14 @@ pub fn make_template_a_page(
         let app_server_text = Text::new(app_server.name.clone());
         let mut app_server_btn = Button::new(app_server_text)
             .on_press(Message::SelectAppServer(app_server.id, app_server.app_id))
+            .width(Length::Fill)
             .style(theme::Button::Secondary);
 
         if let Some(id) = app.selected_app_server_id {
             if id == app_server.id {
-                app_server_btn = app_server_btn.style(theme::Button::Positive);
+                app_server_btn = app_server_btn.style(theme::Button::Custom(Box::new(
+                    crate::theme::Button::Selected,
+                )));
 
                 let mut app_server_c = Column::new().spacing(DEFAULT_SPACING);
                 if app_server.description != "" {
@@ -87,7 +90,9 @@ pub fn make_template_a_page(
                 )
                 .width(150)
                 .height(40)
-                .style(theme::Button::Positive);
+                .style(theme::Button::Custom(Box::new(
+                    crate::theme::Button::Launch,
+                )));
                 if !update_processing {
                     start_btn = start_btn.on_press(Message::ClickStart {
                         app_server_id: app_server.id,
@@ -105,7 +110,10 @@ pub fn make_template_a_page(
                         .horizontal_alignment(Horizontal::Center)
                         .vertical_alignment(Vertical::Center),
                 )
-                .height(40);
+                .height(40)
+                .style(theme::Button::Custom(Box::new(
+                    crate::theme::Button::Update,
+                )));
                 if update_processing {
                     update_btn = update_btn.on_press(Message::CancelUpdate {
                         app_server_id: app_server.id,
@@ -208,9 +216,9 @@ fn make_progress_bar(
 
             let progress_bar =
                 ProgressBar::new(RangeInclusive::new(0.0, total as f32), value as f32).height(10);
-            let progress_tip = Text::new(tip);
+            let progress_tip = Text::new(tip).size(12);
             let progress_panel = Column::new().push(progress_bar).push(progress_tip);
-            let progress_c = Container::new(progress_panel);
+            let progress_c = Container::new(progress_panel).max_height(40);
             return Some(progress_c);
         }
     }

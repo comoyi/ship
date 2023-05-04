@@ -3,8 +3,8 @@ mod template_a;
 use crate::gui::view::app::template_a::make_template_a_page;
 use crate::gui::view::{DEFAULT_PADDING, DEFAULT_SPACING};
 use crate::gui::Message;
-use iced::theme;
 use iced::widget::{Button, Column, Container, Row, Text};
+use iced::{theme, Length};
 use ship_internal::application::app::{App, AppManager};
 use ship_internal::application::update::update_manage::UpdateManager;
 use std::sync::{Arc, Mutex};
@@ -13,7 +13,7 @@ pub fn make_app_page(
     app_manager: Arc<Mutex<AppManager>>,
     update_manager: Arc<Mutex<UpdateManager>>,
 ) -> Container<'static, Message> {
-    let mut tab_c = Column::new().spacing(1);
+    let mut tab_c = Column::new().spacing(1).max_width(150);
 
     let app_manager_g = app_manager.lock().unwrap();
     let mut selected_app = None;
@@ -22,10 +22,13 @@ pub fn make_app_page(
     for (_, app) in map_vec {
         let mut app_btn = Button::new(Text::new(app.name.clone()))
             .style(theme::Button::Secondary)
+            .width(Length::Fill)
             .on_press(Message::SelectApp(app.id));
         if let Some(sel_app_id) = app_manager_g.selected_app_id {
             if sel_app_id == app.id {
-                app_btn = app_btn.style(theme::Button::Positive);
+                app_btn = app_btn.style(theme::Button::Custom(Box::new(
+                    crate::theme::Button::Selected,
+                )));
                 selected_app = Some(app);
             }
         }
