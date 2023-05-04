@@ -34,6 +34,7 @@ impl button::StyleSheet for Button {
             },
         }
     }
+
     fn hovered(&self, _style: &Self::Style) -> Appearance {
         match self {
             Button::Selected => Appearance {

@@ -29,7 +29,7 @@ fn get(url: &str) -> Result<reqwest::blocking::Response, Error> {
         .get(url)
         .header("version_no", version_no)
         .header("version_text", version_text)
-        .header("distribution_channel_code", channel_code)
+        .header("channel_code", channel_code)
         .send()
         .map_err(|_| Error::RequestError)
 }
