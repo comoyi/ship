@@ -21,7 +21,7 @@ fn get_full_url_by_server_address(path: &str, server_address: &str) -> String {
 fn get(url: &str) -> Result<reqwest::blocking::Response, Error> {
     let version_no = version::VERSION_NO;
     let version_text = version::VERSION_TEXT;
-    let channel_code = &CONFIG.distribution_channel_code;
+    let channel_code = &CONFIG.channel_code;
     reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(3))
         .build()

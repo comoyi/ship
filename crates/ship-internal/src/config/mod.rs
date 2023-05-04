@@ -18,7 +18,7 @@ pub struct Config {
     pub log_level: String,
     pub language: String,
     pub server: Server,
-    pub distribution_channel_code: String,
+    pub channel_code: String,
 }
 
 impl Config {
@@ -29,10 +29,7 @@ impl Config {
             "server.address: {}",
             self.server.address.to_address_string()
         );
-        debug!(
-            "distribution_channel_code: {}",
-            self.distribution_channel_code
-        );
+        debug!("channel_code: {}", self.channel_code);
     }
 }
 
@@ -88,6 +85,6 @@ fn set_default(b: ConfigBuilder<DefaultState>) -> ConfigBuilder<DefaultState> {
         .unwrap()
         .set_default("language", "en_US")
         .unwrap()
-        .set_default("distribution_channel_code", "default")
+        .set_default("channel_code", "default")
         .unwrap()
 }
