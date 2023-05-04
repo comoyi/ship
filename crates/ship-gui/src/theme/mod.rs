@@ -18,12 +18,12 @@ impl button::StyleSheet for Button {
     fn active(&self, _style: &Self::Style) -> Appearance {
         match self {
             Button::Selected => Appearance {
-                background: Some(Background::Color(Color::new(0.0, 0.6, 1.0, 1.0))),
+                background: Some(Background::Color(Color::new(0.0, 0.6, 0.8, 1.0))),
                 text_color: Color::WHITE,
                 ..Default::default()
             },
             Button::Launch => Appearance {
-                background: Some(Background::Color(Color::new(0.0, 0.5, 0.0, 1.0))),
+                background: Some(Background::Color(Color::new(0.0, 0.6, 0.0, 1.0))),
                 text_color: Color::WHITE,
                 ..Default::default()
             },
@@ -37,12 +37,12 @@ impl button::StyleSheet for Button {
     fn hovered(&self, _style: &Self::Style) -> Appearance {
         match self {
             Button::Selected => Appearance {
-                background: Some(Background::Color(Color::new(0.0, 0.6, 1.0, 0.9))),
+                background: Some(Background::Color(Color::new(0.0, 0.6, 0.8, 0.9))),
                 text_color: Color::WHITE,
                 ..Default::default()
             },
             Button::Launch => Appearance {
-                background: Some(Background::Color(Color::new(0.0, 0.5, 0.0, 0.9))),
+                background: Some(Background::Color(Color::new(0.0, 0.6, 0.0, 0.9))),
                 text_color: Color::WHITE,
                 ..Default::default()
             },
