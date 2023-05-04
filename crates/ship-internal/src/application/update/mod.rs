@@ -47,7 +47,9 @@ pub enum UpdateTaskStatus {
     },
     Canceled,
     Failed,
-    Finished,
+    Finished {
+        finish_time: i64,
+    },
 }
 
 #[derive(Default, Debug)]
@@ -72,7 +74,9 @@ pub enum UpdateTaskTraceMessage {
     },
     Canceled,
     Failed,
-    Finished,
+    Finished {
+        finish_time: i64,
+    },
 }
 
 #[derive(Debug)]

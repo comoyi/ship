@@ -198,10 +198,11 @@ fn make_progress_bar(
                 UpdateTaskStatus::Failed => {
                     tip = format!("{}", t!("update_tip_failed"));
                 }
-                UpdateTaskStatus::Finished => {
+                UpdateTaskStatus::Finished { finish_time } => {
                     total = 100; // 100%
                     value = total;
-                    tip = format!("{}", t!("update_tip_finished"));
+                    let finish_time = util::time::format_timestamp_to_datetime(finish_time.clone());
+                    tip = format!("{} {}", t!("update_tip_finished"), finish_time);
                 }
             }
 

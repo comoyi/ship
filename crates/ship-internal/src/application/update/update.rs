@@ -304,7 +304,9 @@ fn handle_task(
                 RecvTimeoutError::Disconnected => {
                     info!("all sync task finished, app_server_id: {}", app_server_id);
                     trace_tx
-                        .send(UpdateTaskTraceMessage::Finished)
+                        .send(UpdateTaskTraceMessage::Finished {
+                            finish_time: chrono::Utc::now().timestamp(),
+                        })
                         .map_err(|_| Error::SendTraceMessageFailed)?;
                     return Ok(());
                 }
@@ -355,8 +357,8 @@ fn watch_trace(
                             UpdateTaskTraceMessage::Failed => {
                                 task.status = UpdateTaskStatus::Failed;
                             }
-                            UpdateTaskTraceMessage::Finished => {
-                                task.status = UpdateTaskStatus::Finished;
+                            UpdateTaskTraceMessage::Finished { finish_time } => {
+                                task.status = UpdateTaskStatus::Finished { finish_time };
                             }
                         }
                         drop(update_manager_g);
