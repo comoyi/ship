@@ -14,7 +14,7 @@ use crate::request::app_server::file_info::ServerFileInfoVo;
 use crate::types::common::{ClientFileInfo, DataNode, FileInfo, ServerFileInfo};
 use log::{debug, info, warn};
 use std::path::Path;
-use std::sync::mpsc::{Receiver, RecvTimeoutError};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
@@ -83,7 +83,6 @@ fn handle_task(
     task.tx
         .send(TaskControlMessage::Start)
         .map_err(|_| Error::SendControlMessageFailed)?;
-    // let trace_tx = task.trace_tx.clone();
     if let Err(e) = update_manager_g.add_task(task) {
         warn!("add update task failed, task_id: {}", task_id);
         return Err(e);
@@ -97,7 +96,29 @@ fn handle_task(
     trace_tx
         .send(UpdateTaskTraceMessage::Wait)
         .map_err(|_| Error::SendTraceMessageFailed)?;
-
+    let r = do_handle_task(
+        app_server_id,
+        update_manager,
+        app_manager,
+        settings_manager,
+        task_id,
+        trace_tx.clone(),
+    );
+    if let Err(_) = &r {
+        trace_tx
+            .send(UpdateTaskTraceMessage::Failed)
+            .map_err(|_| Error::SendTraceMessageFailed)?;
+    };
+    r
+}
+fn do_handle_task(
+    app_server_id: u64,
+    update_manager: Arc<Mutex<UpdateManager>>,
+    app_manager: Arc<Mutex<AppManager>>,
+    settings_manager: Arc<Mutex<SettingsManager>>,
+    task_id: u64,
+    trace_tx: Sender<UpdateTaskTraceMessage>,
+) -> Result<(), Error> {
     // check start
     loop {
         thread::sleep(Duration::from_millis(100));
