@@ -1,7 +1,7 @@
 use crate::application::app::AppManager;
 use crate::application::settings::SettingsManager;
 use crate::application::update::update::handle_update_control;
-use crate::application::update::{Error, UpdateTask, UpdateTaskControlMessage};
+use crate::application::update::{Error, UpdateTask, UpdateTaskControlMessage, UpdateTaskStatus};
 use log::{debug, warn};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -79,6 +79,22 @@ impl UpdateManager {
 
         Ok(())
     }
+
+    pub fn is_update_processing(&self, app_server_id: u64) -> Result<bool, String> {
+        let update_task_o = self.get_update_task_by_app_server_id(app_server_id);
+        if let Some(update_task) = update_task_o {
+            return match update_task.status {
+                UpdateTaskStatus::Canceled
+                | UpdateTaskStatus::Failed
+                | UpdateTaskStatus::Finished { .. } => Ok(false),
+                _ => Ok(true),
+            };
+        }
+        Err(format!(
+            "UpdateTask not exist, app_server_id: {}",
+            app_server_id
+        ))
+    }
 }
 
 impl Default for UpdateManager {
@@ -102,7 +118,7 @@ pub fn start(
     thread::spawn(move || loop {
         thread::sleep(Duration::from_millis(100));
         let update_manager_2 = Arc::clone(&update_manager);
-        let mut update_manager_g = update_manager.lock().unwrap();
+        let update_manager_g = update_manager.lock().unwrap();
         let task_r = update_manager_g.rx.try_recv();
         drop(update_manager_g);
 

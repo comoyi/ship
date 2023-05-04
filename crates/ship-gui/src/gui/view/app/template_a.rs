@@ -74,34 +74,28 @@ pub fn make_template_a_page(
                         .height(Length::Fill),
                 );
 
-                let start_btn = Button::new(
+                let update_manager_g = update_manager.lock().unwrap();
+                let update_processing = update_manager_g
+                    .is_update_processing(app_server.id)
+                    .unwrap_or(false);
+                drop(update_manager_g);
+
+                let mut start_btn = Button::new(
                     Text::new(format!("{}{}", "", t!("launch")))
                         .horizontal_alignment(Horizontal::Center)
                         .vertical_alignment(Vertical::Center),
                 )
                 .width(150)
                 .height(40)
-                .style(theme::Button::Positive)
-                .on_press(Message::ClickStart {
-                    app_server_id: app_server.id,
-                    app_id: app_server.app_id,
-                });
-
-                let mut update_manager_g = update_manager.lock().unwrap();
-                let update_task_o =
-                    update_manager_g.get_mut_update_task_by_app_server_id(app_server.id);
-                let mut update_text = t!("update");
-                let mut update_processing = false;
-                match update_task_o {
-                    None => {}
-                    Some(update_task) => match update_task.status {
-                        UpdateTaskStatus::Wait | UpdateTaskStatus::Processing { .. } => {
-                            update_processing = true;
-                        }
-                        _ => {}
-                    },
+                .style(theme::Button::Positive);
+                if !update_processing {
+                    start_btn = start_btn.on_press(Message::ClickStart {
+                        app_server_id: app_server.id,
+                        app_id: app_server.app_id,
+                    });
                 }
-                drop(update_manager_g);
+
+                let mut update_text = t!("update");
                 if update_processing {
                     update_text = t!("cancel_update");
                 }
