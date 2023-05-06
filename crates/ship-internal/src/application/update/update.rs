@@ -12,6 +12,7 @@ use crate::request;
 use crate::types::common::{ClientFileInfo, DataNode, FileInfo, ServerFileInfo};
 use log::{debug, info, warn};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
@@ -131,6 +132,27 @@ fn do_handle_task(
         }
     }
 
+    let is_cancel = Arc::new(AtomicBool::new(false));
+    let is_cancel_1 = Arc::clone(&is_cancel);
+    let update_manager_1 = Arc::clone(&update_manager);
+    let trace_tx_1 = trace_tx.clone();
+    thread::spawn(move || loop {
+        let m_o = get_control_message(task_id, Arc::clone(&update_manager_1)).unwrap();
+        if let Some(message) = m_o {
+            match message {
+                TaskControlMessage::Stop => {
+                    debug!("get message: {:?}", message);
+                    is_cancel_1.store(true, Ordering::Relaxed);
+                    trace_tx_1
+                        .send(UpdateTaskTraceMessage::Canceled)
+                        .map_err(|_| Error::SendTraceMessageFailed)
+                        .unwrap();
+                }
+                _ => {}
+            }
+        }
+    });
+
     let data_path_r = get_data_path_by_app_server_id(
         app_server_id,
         Arc::clone(&app_manager),
@@ -193,15 +215,20 @@ fn do_handle_task(
     trace_tx
         .send(UpdateTaskTraceMessage::GetClientFileInfo)
         .map_err(|_| Error::SendTraceMessageFailed)?;
-    let cfi_r = scan::scan(&data_path);
+    let cfi_r = scan::scan(&data_path, Arc::clone(&is_cancel));
     let cfi = match cfi_r {
         Ok(x) => x,
         Err(e) => {
-            warn!(
-                "get ClientFileInfo failed, app_server_id: {}, err: {:?}",
-                app_server_id, e
-            );
-            return Err(Error::GetClientFileInfoFailed);
+            return match e {
+                scan::Error::Cancel => Ok(()),
+                _ => {
+                    warn!(
+                        "get ClientFileInfo failed, app_server_id: {}, err: {:?}",
+                        app_server_id, e
+                    );
+                    Err(Error::GetClientFileInfoFailed)
+                }
+            }
         }
     };
 
@@ -256,18 +283,8 @@ fn do_handle_task(
     loop {
         thread::sleep(Duration::from_millis(10));
 
-        let m_o = get_control_message(task_id, Arc::clone(&update_manager))?;
-        if let Some(message) = m_o {
-            match message {
-                TaskControlMessage::Stop => {
-                    debug!("get message: {:?}", message);
-                    trace_tx
-                        .send(UpdateTaskTraceMessage::Canceled)
-                        .map_err(|_| Error::SendTraceMessageFailed)?;
-                    break;
-                }
-                _ => {}
-            }
+        if is_cancel.load(Ordering::Relaxed) {
+            break;
         }
 
         // handle
@@ -287,15 +304,10 @@ fn do_handle_task(
                         sync_task: sync_task.clone(),
                     })
                     .map_err(|_| Error::SendTraceMessageFailed)?;
-                if let Err(e) = update::sync::handle_task(
-                    sync_task,
-                    task_id,
-                    trace_tx.clone(),
-                    Arc::clone(&update_manager),
-                ) {
+                if let Err(e) = update::sync::handle_task(sync_task, Arc::clone(&is_cancel)) {
                     return match e {
                         // canceled by control message
-                        SyncError::Canceled => Ok(()),
+                        SyncError::Cancel => Ok(()),
                         _ => {
                             warn!("handle SyncTask failed, err: {:?}", e);
                             Err(Error::HandleSyncTaskFailed)

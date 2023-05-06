@@ -1,13 +1,11 @@
-use crate::application::update::update_manage::UpdateManager;
-use crate::application::update::{update, TaskControlMessage, UpdateTaskTraceMessage};
 use crate::cache;
 use crate::types::common::{DataNode, FileInfo, FileType};
 use log::{debug, warn};
 use rand::{thread_rng, Rng};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::Sender;
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::{fs, io};
 use util::hash;
 
@@ -47,11 +45,6 @@ pub enum SyncTaskType {
 
 #[derive(Debug)]
 pub enum SyncError {
-    GetControlMessageFailed,
-    SendTraceMessageFailed,
-
-    Canceled,
-
     PathInvalid,
     DownloadFailed,
     CreateFileFailed,
@@ -67,14 +60,11 @@ pub enum SyncError {
     DeleteFailed,
     UnknownFileType,
     CheckExistsFailed,
+
+    Cancel,
 }
 
-pub fn handle_task(
-    task: SyncTask,
-    task_id: u64,
-    trace_tx: Sender<UpdateTaskTraceMessage>,
-    update_manager: Arc<Mutex<UpdateManager>>,
-) -> Result<(), SyncError> {
+pub fn handle_task(task: SyncTask, is_cancel: Arc<AtomicBool>) -> Result<(), SyncError> {
     debug!("SyncTask: {:?}", task);
 
     match task.sync_type {
@@ -119,22 +109,8 @@ pub fn handle_task(
                             let mut buf = [0; 1024 * 1024];
                             loop {
                                 // control
-                                let m_o = update::get_control_message(
-                                    task_id,
-                                    Arc::clone(&update_manager),
-                                )
-                                .map_err(|_| SyncError::GetControlMessageFailed)?;
-                                if let Some(message) = m_o {
-                                    match message {
-                                        TaskControlMessage::Stop => {
-                                            debug!("get message: {:?}", message);
-                                            trace_tx
-                                                .send(UpdateTaskTraceMessage::Canceled)
-                                                .map_err(|_| SyncError::SendTraceMessageFailed)?;
-                                            return Err(SyncError::Canceled);
-                                        }
-                                        _ => {}
-                                    }
+                                if is_cancel.load(Ordering::Relaxed) {
+                                    return Err(SyncError::Cancel);
                                 }
 
                                 let n = resp

@@ -2,15 +2,19 @@ use crate::types::common::{ClientFileInfo, FileInfo, FileType, ScanStatus};
 use chrono::Local;
 use log::{debug, warn};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub enum Error {
     ScanError,
     PathNotExitError,
     CalcHashError,
+
+    Cancel,
 }
 
-pub fn scan(base_path: &str) -> Result<ClientFileInfo, Error> {
+pub fn scan(base_path: &str, is_cancel: Arc<AtomicBool>) -> Result<ClientFileInfo, Error> {
     let p = Path::new(base_path);
     if !p.exists() {
         return Err(Error::PathNotExitError);
@@ -23,6 +27,9 @@ pub fn scan(base_path: &str) -> Result<ClientFileInfo, Error> {
 
     let iter = d.into_iter();
     for entry_r in iter {
+        if is_cancel.load(Ordering::Relaxed) {
+            return Err(Error::Cancel);
+        }
         match entry_r {
             Ok(entry) => {
                 let absolute_path = entry.path().to_str().unwrap();
