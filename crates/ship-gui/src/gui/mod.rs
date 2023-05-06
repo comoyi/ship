@@ -19,7 +19,7 @@ pub fn start(flags: GuiFlags) {
         window: window::Settings {
             size: (900, 600),
             position: window::Position::Centered,
-            min_size: Some((500, 300)),
+            min_size: Some((700, 500)),
             resizable: true,
             decorations: true,
             ..window::Settings::default()

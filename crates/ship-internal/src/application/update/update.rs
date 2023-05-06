@@ -1,7 +1,7 @@
 use crate::application::app::AppManager;
 use crate::application::common::get_data_path_by_app_server_id;
 use crate::application::settings::SettingsManager;
-use crate::application::update::sync::{SyncTask, SyncTaskType};
+use crate::application::update::sync::{SyncError, SyncTask, SyncTaskType};
 use crate::application::update::update_manage::UpdateManager;
 use crate::application::update::{
     Error, Progress, TaskControlMessage, UpdateTaskControlMessage, UpdateTaskStatus,
@@ -287,9 +287,20 @@ fn do_handle_task(
                         sync_task: sync_task.clone(),
                     })
                     .map_err(|_| Error::SendTraceMessageFailed)?;
-                if let Err(e) = update::sync::handle_task(sync_task) {
-                    warn!("handle SyncTask failed, err: {:?}", e);
-                    return Err(Error::HandleSyncTaskFailed);
+                if let Err(e) = update::sync::handle_task(
+                    sync_task,
+                    task_id,
+                    trace_tx.clone(),
+                    Arc::clone(&update_manager),
+                ) {
+                    return match e {
+                        // canceled by control message
+                        SyncError::Canceled => Ok(()),
+                        _ => {
+                            warn!("handle SyncTask failed, err: {:?}", e);
+                            Err(Error::HandleSyncTaskFailed)
+                        }
+                    };
                 }
             }
             Err(e) => match e {
@@ -312,7 +323,7 @@ fn do_handle_task(
     Ok(())
 }
 
-fn get_control_message(
+pub fn get_control_message(
     task_id: u64,
     update_manager: Arc<Mutex<UpdateManager>>,
 ) -> Result<Option<TaskControlMessage>, Error> {

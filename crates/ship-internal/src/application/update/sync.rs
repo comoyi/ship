@@ -1,9 +1,13 @@
+use crate::application::update::update_manage::UpdateManager;
+use crate::application::update::{update, TaskControlMessage, UpdateTaskTraceMessage};
 use crate::cache;
 use crate::types::common::{DataNode, FileInfo, FileType};
 use log::{debug, warn};
 use rand::{thread_rng, Rng};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::Sender;
+use std::sync::{Arc, Mutex};
 use std::{fs, io};
 use util::hash;
 
@@ -43,6 +47,11 @@ pub enum SyncTaskType {
 
 #[derive(Debug)]
 pub enum SyncError {
+    GetControlMessageFailed,
+    SendTraceMessageFailed,
+
+    Canceled,
+
     PathInvalid,
     DownloadFailed,
     CreateFileFailed,
@@ -60,7 +69,12 @@ pub enum SyncError {
     CheckExistsFailed,
 }
 
-pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
+pub fn handle_task(
+    task: SyncTask,
+    task_id: u64,
+    trace_tx: Sender<UpdateTaskTraceMessage>,
+    update_manager: Arc<Mutex<UpdateManager>>,
+) -> Result<(), SyncError> {
     debug!("SyncTask: {:?}", task);
 
     match task.sync_type {
@@ -71,9 +85,11 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
             if !full_file_path.starts_with(&task.base_path) {
                 return Err(SyncError::PathInvalid);
             }
-            let r = delete_file(&full_file_path);
-            if let Err(e) = r {
-                return Err(e);
+            delete_file(&full_file_path)?;
+
+            // create parent dir
+            if let Some(parent_dir) = full_file_path.parent() {
+                fs::create_dir_all(parent_dir).map_err(|_| SyncError::CreateDirFailed)?;
             }
 
             match task.file_info.file_type {
@@ -96,11 +112,31 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                             );
                             let mut resp = reqwest::blocking::get(url)
                                 .map_err(|_| SyncError::DownloadFailed)?;
+
                             let f = fs::File::create(&full_file_path)
                                 .map_err(|_| SyncError::CreateFileFailed)?;
                             let mut writer = io::BufWriter::new(f);
                             let mut buf = [0; 1024 * 1024];
                             loop {
+                                // control
+                                let m_o = update::get_control_message(
+                                    task_id,
+                                    Arc::clone(&update_manager),
+                                )
+                                .map_err(|_| SyncError::GetControlMessageFailed)?;
+                                if let Some(message) = m_o {
+                                    match message {
+                                        TaskControlMessage::Stop => {
+                                            debug!("get message: {:?}", message);
+                                            trace_tx
+                                                .send(UpdateTaskTraceMessage::Canceled)
+                                                .map_err(|_| SyncError::SendTraceMessageFailed)?;
+                                            return Err(SyncError::Canceled);
+                                        }
+                                        _ => {}
+                                    }
+                                }
+
                                 let n = resp
                                     .read(&mut buf)
                                     .map_err(|_| SyncError::ReadDownloadContentFailed)?;
@@ -128,14 +164,13 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                     }
                 }
                 FileType::Dir => {
-                    let create_dir_r = fs::create_dir_all(&full_file_path);
-                    if let Err(e) = create_dir_r {
+                    fs::create_dir_all(&full_file_path).map_err(|e| {
                         warn!(
                             "create dir failed, full_file_path: {:?}, err: {}",
                             full_file_path, e
                         );
-                        return Err(SyncError::CreateDirFailed);
-                    }
+                        SyncError::CreateDirFailed
+                    })?;
                 }
                 FileType::Symlink => {
                     let mut content = "".to_string();
@@ -149,18 +184,10 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                             .to_address_string(),
                         task.file_info.relative_path
                     );
-                    let resp_r = reqwest::blocking::get(url);
-                    match resp_r {
-                        Ok(mut resp) => {
-                            let read_r = resp.read_to_string(&mut content);
-                            if let Err(_) = read_r {
-                                return Err(SyncError::ReadDownloadContentFailed);
-                            }
-                        }
-                        Err(_) => {
-                            return Err(SyncError::DownloadFailed);
-                        }
-                    }
+                    let mut resp =
+                        reqwest::blocking::get(url).map_err(|_| SyncError::DownloadFailed)?;
+                    resp.read_to_string(&mut content)
+                        .map_err(|_| SyncError::ReadDownloadContentFailed)?;
                     let original_path = Path::new(&content);
                     let create_symlink_r;
                     if original_path.is_dir() {
@@ -187,10 +214,7 @@ pub fn handle_task(task: SyncTask) -> Result<(), SyncError> {
                 "will delete, file_info: {:?}, full_file_path: {:?}",
                 task.file_info, full_file_path
             );
-            let r = delete_file(&full_file_path);
-            if let Err(e) = r {
-                return Err(e);
-            }
+            delete_file(&full_file_path)?;
         }
     }
     Ok(())
