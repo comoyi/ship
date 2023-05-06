@@ -4,6 +4,7 @@ mod view;
 use crate::gui::view::navbar::PageRoute;
 use crate::gui::view::{make_view, PageManager};
 use iced::widget::{Column, Container};
+use iced::window::icon;
 use iced::{subscription, window, Application, Command, Element, Renderer, Settings, Subscription};
 use ship_internal::application::app::AppManager;
 use ship_internal::application::settings::SettingsManager;
@@ -15,6 +16,9 @@ use std::thread;
 use std::time::Duration;
 
 pub fn start(flags: GuiFlags) {
+    let icon = Some(
+        icon::from_file_data(include_bytes!("../../../../assets/images/icon.png"), None).unwrap(),
+    );
     let _ = Gui::run(Settings {
         window: window::Settings {
             size: (900, 600),
@@ -22,6 +26,7 @@ pub fn start(flags: GuiFlags) {
             min_size: Some((700, 500)),
             resizable: true,
             decorations: true,
+            icon,
             ..window::Settings::default()
         },
         flags,
