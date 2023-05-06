@@ -9,6 +9,7 @@ pub struct VersionManager {
     pub show_tip: bool,
     pub new_version: NewVersionInfo,
     pub is_updating: bool,
+    pub is_completed: bool,
     pub update_status: UpdateStatus,
 }
 

@@ -9,13 +9,11 @@ use crate::gui::view::home::make_home_page;
 use crate::gui::view::navbar::{make_nav_bar, PageRoute};
 use crate::gui::view::settings::make_settings_page;
 use crate::gui::{Gui, Message};
-use iced::widget::{Button, Column, Container, ProgressBar, Row, Text};
-use iced::{theme, Padding};
+use iced::widget::{Column, Container, Text};
+use iced::Padding;
 use iced_aw::{Card, Modal};
 use internationalization::t;
-use ship_internal::version::update::UpdateStatus;
 use ship_internal::{application, version as app_version};
-use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 const DEFAULT_PADDING: Padding = Padding::new(10.0);
@@ -43,20 +41,7 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
     .on_esc(Message::CloseAboutModal);
     c = c.push(about_modal);
 
-    let version_manager_g = s.version_manager.lock().unwrap();
-    let is_show_version_tip = version_manager_g.show_tip || version_manager_g.is_updating;
-    let is_force = version_manager_g.new_version.force;
-    drop(version_manager_g);
-
-    let version_manager = Arc::clone(&s.version_manager);
-    let mut version_modal = Modal::new(is_show_version_tip, "", move || {
-        version::make_version_update_content(Arc::clone(&version_manager)).into()
-    });
-    if !is_force {
-        version_modal = version_modal
-            .backdrop(Message::CloseVersionUpdateModal)
-            .on_esc(Message::CloseVersionUpdateModal);
-    }
+    let version_modal = version::make_version_update_content(Arc::clone(&s.version_manager));
     c = c.push(version_modal);
 
     match current_route {

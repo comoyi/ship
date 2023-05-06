@@ -16,6 +16,8 @@ welcome: Welcome
 data_dir: Data Dir
 app_server_list_head: Servers
 announcement: Announcement
+self_update_updating: Updating
+self_update_restart: Restart
 start_status_start_processing: Start processing
 start_status_check_update: Check update
 start_status_updating: Updating

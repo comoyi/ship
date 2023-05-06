@@ -123,6 +123,7 @@ pub enum Message {
     OpenUrl(String),
 
     SelfUpdate,
+    SelfUpdateRestart,
 }
 
 #[derive(Default)]

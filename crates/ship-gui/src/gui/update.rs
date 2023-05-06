@@ -74,6 +74,9 @@ impl Gui {
             Message::SelfUpdate => {
                 version::update::update_new_version(Arc::clone(&self.version_manager));
             }
+            Message::SelfUpdateRestart => {
+                version::update::restart();
+            }
         }
         Command::none()
     }
