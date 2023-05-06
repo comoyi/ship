@@ -3,6 +3,7 @@ use iced::Command;
 use internationalization::DICTIONARY;
 use ship_internal::application::app::{app_manage, app_server};
 use ship_internal::application::update;
+use ship_internal::version;
 use std::process;
 use std::sync::Arc;
 
@@ -69,6 +70,9 @@ impl Gui {
             Message::OpenUrl(url) => {
                 // TODO prompt when failed
                 let _ = open::that(url);
+            }
+            Message::SelfUpdate => {
+                version::update::update_new_version(Arc::clone(&self.version_manager));
             }
         }
         Command::none()

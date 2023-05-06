@@ -121,6 +121,8 @@ pub enum Message {
     OpenDir(String),
     OpenImage(String),
     OpenUrl(String),
+
+    SelfUpdate,
 }
 
 #[derive(Default)]

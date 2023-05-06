@@ -9,11 +9,13 @@ use crate::gui::view::home::make_home_page;
 use crate::gui::view::navbar::{make_nav_bar, PageRoute};
 use crate::gui::view::settings::make_settings_page;
 use crate::gui::{Gui, Message};
-use iced::widget::{Button, Column, Container, Text};
-use iced::Padding;
+use iced::widget::{Button, Column, Container, ProgressBar, Row, Text};
+use iced::{theme, Padding};
 use iced_aw::{Card, Modal};
 use internationalization::t;
+use ship_internal::version::update::UpdateStatus;
 use ship_internal::{application, version as app_version};
+use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 const DEFAULT_PADDING: Padding = Padding::new(10.0);
@@ -42,24 +44,15 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
     c = c.push(about_modal);
 
     let version_manager_g = s.version_manager.lock().unwrap();
-    let is_show_version_tip = version_manager_g.show_tip;
-    let new_version = version_manager_g.new_version.clone();
+    let is_show_version_tip = version_manager_g.show_tip || version_manager_g.is_updating;
+    let is_force = version_manager_g.new_version.force;
     drop(version_manager_g);
+
+    let version_manager = Arc::clone(&s.version_manager);
     let mut version_modal = Modal::new(is_show_version_tip, "", move || {
-        let download_btn = Button::new(Text::new(new_version.download_text.clone()))
-            .on_press(Message::OpenUrl(new_version.download_url.clone()));
-        let l_1 = Text::new(format!("{}", new_version.description));
-        let l_2 = Text::new(format!("{}", new_version.release_description));
-        let body_c = Column::new()
-            .spacing(10)
-            .push(download_btn)
-            .push(l_1)
-            .push(l_2);
-        Card::new(Text::new(t!("new_version")), body_c)
-            .max_width(300.0)
-            .into()
+        version::make_version_update_content(Arc::clone(&version_manager)).into()
     });
-    if !new_version.force {
+    if !is_force {
         version_modal = version_modal
             .backdrop(Message::CloseVersionUpdateModal)
             .on_esc(Message::CloseVersionUpdateModal);
