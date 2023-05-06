@@ -11,6 +11,7 @@ pub struct VersionManager {
     pub is_updating: bool,
     pub is_completed: bool,
     pub update_status: UpdateStatus,
+    pub exe_path: String,
 }
 
 #[derive(Deserialize, Default, Debug, Clone)]

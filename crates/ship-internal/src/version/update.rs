@@ -3,6 +3,7 @@ use crate::{request, version};
 use log::{debug, info, warn};
 use std::io::{Read, Write};
 use std::path::Path;
+use std::process::Command;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::{mpsc, Arc, Mutex};
@@ -59,7 +60,7 @@ pub fn update_new_version(version_manager: Arc<Mutex<VersionManager>>) {
 
         let version_manager_1 = Arc::clone(&version_manager);
         thread::spawn(move || loop {
-            thread::sleep(Duration::from_millis(300));
+            thread::sleep(Duration::from_millis(200));
             if let Ok(m) = rx.recv() {
                 let mut version_manager_g = version_manager_1.lock().unwrap();
                 version_manager_g.update_status = m;
@@ -148,7 +149,7 @@ fn do_download<P: AsRef<Path>>(
         if is_stop_1.load(Ordering::Relaxed) {
             return;
         }
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(Duration::from_millis(300));
         let _ = tx.send(UpdateStatus::Processing {
             progress: Progress {
                 value: value_1.load(Ordering::Relaxed),
@@ -175,6 +176,16 @@ fn do_download<P: AsRef<Path>>(
     Ok(())
 }
 
-pub fn restart() {
+pub fn restart(version_manager: Arc<Mutex<VersionManager>>) {
+    let version_manager_g = version_manager.lock().unwrap();
+    let exe_path = version_manager_g.exe_path.clone();
+    drop(version_manager_g);
+
+    let mut c = Command::new(exe_path);
+    let r = c.spawn();
+    if let Err(e) = r {
+        warn!("start new version program failed, err: {}", e);
+        return;
+    }
     process::exit(0);
 }

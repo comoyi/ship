@@ -14,9 +14,9 @@ use crate::version::version_manage;
 use crate::version::version_manage::VersionManager;
 use internationalization::DICTIONARY;
 use log::{debug, warn};
-use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::{env, fs};
 use util::filepath;
 
 pub const APP_NAME: &str = "Launcher";
@@ -78,6 +78,11 @@ impl App {
 
         drop(settings_manager);
 
+        let mut version_manager_g = self.version_manager.lock().unwrap();
+        // TODO remove unwrap
+        let exe_path = env::current_exe().unwrap().to_str().unwrap().to_string();
+        version_manager_g.exe_path = exe_path;
+        drop(version_manager_g);
         version_manage::start(Arc::clone(&self.version_manager));
 
         update_manage::start(

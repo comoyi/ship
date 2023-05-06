@@ -19,7 +19,6 @@ pub fn make_version_update_content(
     let new_version = version_manager_g.new_version.clone();
     let mut value = 0;
     let mut total = 0;
-    let mut tip = "";
     match &version_manager_g.update_status {
         UpdateStatus::Wait => {}
         UpdateStatus::Processing { progress } => {
