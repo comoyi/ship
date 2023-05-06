@@ -137,6 +137,7 @@ fn do_handle_task(
     let update_manager_1 = Arc::clone(&update_manager);
     let trace_tx_1 = trace_tx.clone();
     thread::spawn(move || loop {
+        thread::sleep(Duration::from_millis(100));
         let m_o = get_control_message(task_id, Arc::clone(&update_manager_1)).unwrap();
         if let Some(message) = m_o {
             match message {
