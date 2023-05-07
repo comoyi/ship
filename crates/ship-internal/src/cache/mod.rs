@@ -1,4 +1,4 @@
-use log::{debug, info, warn};
+use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Write;
@@ -50,7 +50,7 @@ pub fn add_to_cache<P: AsRef<Path>>(src_path: P, app_id: u64) -> Result<(), Cach
 
     let dst_path = dst_dir_path.join(&cache_name);
     debug!("before copy to cache");
-    save_cache_file(src_path, dst_path)?;
+    save_cache_file(&src_path, &dst_path)?;
     debug!("after copy to cache");
     let cache_rel_path = dst_path
         .strip_prefix(&cache_dir_path)
