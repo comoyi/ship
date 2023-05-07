@@ -68,7 +68,7 @@ pub fn start(app_manager: Arc<Mutex<AppManager>>) -> Result<(), Error> {
 
     let app_manager_ptr = Arc::clone(&app_manager);
     thread::spawn(move || {
-        refresh_announcement(app_manager_ptr);
+        loop_refresh_announcement(app_manager_ptr);
     });
 
     let app_manager_ptr = Arc::clone(&app_manager);
@@ -79,8 +79,15 @@ pub fn start(app_manager: Arc<Mutex<AppManager>>) -> Result<(), Error> {
     Ok(())
 }
 
-fn refresh_announcement(app_manager: Arc<Mutex<AppManager>>) {
+fn loop_refresh_announcement(app_manager: Arc<Mutex<AppManager>>) {
     loop {
+        refresh_announcement(Arc::clone(&app_manager));
+        thread::sleep(Duration::from_secs(60));
+    }
+}
+
+pub fn refresh_announcement(app_manager: Arc<Mutex<AppManager>>) {
+    thread::spawn(move || {
         let (app_server_id, app_id, address) =
             get_current_app_server_info(Arc::clone(&app_manager));
 
@@ -100,9 +107,7 @@ fn refresh_announcement(app_manager: Arc<Mutex<AppManager>>) {
                 }
             }
         }
-
-        thread::sleep(Duration::from_secs(60));
-    }
+    });
 }
 
 fn set_announcement(
@@ -130,7 +135,6 @@ fn loop_refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
 }
 
 pub fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
-    let app_manager = Arc::clone(&app_manager);
     thread::spawn(move || {
         let (app_server_id, app_id, address) =
             get_current_app_server_info(Arc::clone(&app_manager));

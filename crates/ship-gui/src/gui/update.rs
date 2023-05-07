@@ -40,6 +40,7 @@ impl Gui {
                 let mut app_manager_g = self.app_manager.lock().unwrap();
                 app_manager_g.select_app_server(app_server_id, app_id);
                 drop(app_manager_g);
+                app_manage::refresh_announcement(Arc::clone(&self.app_manager));
                 app_manage::refresh_banner(Arc::clone(&self.app_manager));
             }
             Message::StartUpdate { app_server_id, .. } => {
