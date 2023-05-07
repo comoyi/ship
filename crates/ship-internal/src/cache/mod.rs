@@ -1,9 +1,10 @@
-use log::warn;
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io::Write;
 use std::path::Path;
 use std::time::UNIX_EPOCH;
-use std::{fs, time};
+use std::{fs, io, time};
 use util::filepath;
 
 #[derive(Debug)]
@@ -27,7 +28,7 @@ pub fn get_cache_file(hash_sum: &str) -> Option<CacheFile> {
     return Some(f.clone());
 }
 
-pub fn add_to_cache<P: AsRef<Path>>(original_path: P, app_id: u64) -> Result<(), CacheError> {
+pub fn add_to_cache<P: AsRef<Path>>(src_path: P, app_id: u64) -> Result<(), CacheError> {
     let cache_dir_path =
         get_update_cache_dir_path().map_err(|_| CacheError::GetUpdateCacheDirPathFailed)?;
     fs::create_dir_all(&cache_dir_path).map_err(|e| {
@@ -48,10 +49,9 @@ pub fn add_to_cache<P: AsRef<Path>>(original_path: P, app_id: u64) -> Result<(),
     }
 
     let dst_path = dst_dir_path.join(&cache_name);
-    fs::copy(&original_path, &dst_path).map_err(|e| {
-        warn!("save cache file failed, err: {}", e);
-        return CacheError::SaveCacheFileFailed;
-    })?;
+    debug!("before copy to cache");
+    save_cache_file(src_path, dst_path)?;
+    debug!("after copy to cache");
     let cache_rel_path = dst_path
         .strip_prefix(&cache_dir_path)
         .map_err(|_| CacheError::CachePathError)?;
@@ -62,8 +62,31 @@ pub fn add_to_cache<P: AsRef<Path>>(original_path: P, app_id: u64) -> Result<(),
     Ok(())
 }
 
+fn save_cache_file<P: AsRef<Path>, Q: AsRef<Path>>(
+    src_path: P,
+    dst_path: Q,
+) -> Result<(), CacheError> {
+    // on windows slow ?why
+    // fs::copy(&src_path, &dst_path)
+    //     .map_err(|e| {
+    //     warn!("save cache file failed, err: {}", e);
+    //     return CacheError::SaveCacheFileFailed;
+    // })?;
+
+    let rf = fs::File::open(&src_path).map_err(|_| CacheError::SaveCacheFileFailed)?;
+    let mut br = io::BufReader::with_capacity(1024 * 1024, rf);
+    let wf = fs::File::create(&dst_path).map_err(|_| CacheError::SaveCacheFileFailed)?;
+    let mut bw = io::BufWriter::with_capacity(1024 * 1024, wf);
+    io::copy(&mut br, &mut bw).map_err(|e| {
+        warn!("save cache file failed, err: {}", e);
+        return CacheError::SaveCacheFileFailed;
+    })?;
+    bw.flush().map_err(|_| CacheError::SaveCacheFileFailed)?;
+    Ok(())
+}
+
 fn add_to_db<P: AsRef<Path>>(dst_path: P, rel_path: &Path) -> Result<(), CacheError> {
-    let hash_sum = util::hash::md5::md5_file(dst_path).map_err(|_| CacheError::CalcHashFailed)?;
+    let hash_sum = util::hash::md5::md5_file(&dst_path).map_err(|_| CacheError::CalcHashFailed)?;
     let cache_file = CacheFile::new(
         rel_path
             .to_str()

@@ -1,5 +1,6 @@
 use crate::application::app::AppManager;
 use crate::application::settings::SettingsManager;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 pub fn get_data_path_by_app_server_id<'a>(
@@ -15,10 +16,13 @@ pub fn get_data_path_by_app_server_id<'a>(
         .clone();
     drop(settings_manager_g);
     let (app_id, app_code, app_dir_name) = get_app_data(app_server_id, app_manager)?;
-    Ok(format!(
-        "{}/{}/{}/{}/{}",
-        base_path, app_code, app_id, app_server_id, app_dir_name
-    ))
+    let p = Path::new(&base_path)
+        .join(&app_code)
+        .join(app_id.to_string())
+        .join(app_server_id.to_string())
+        .join(&app_dir_name);
+    let ps = p.to_str().ok_or("get path failed")?.to_string();
+    Ok(ps)
 }
 
 fn get_app_data<'a>(
