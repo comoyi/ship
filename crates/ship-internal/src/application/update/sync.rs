@@ -105,7 +105,12 @@ pub fn handle_task(task: SyncTask, is_cancel: Arc<AtomicBool>) -> Result<(), Syn
 
                             let f = fs::File::create(&full_file_path)
                                 .map_err(|_| SyncError::CreateFileFailed)?;
-                            let mut writer = io::BufWriter::new(f);
+                            let mut cap: usize = 8 * 1024;
+                            let file_size = task.file_info.size;
+                            if file_size < 1024 * 1024 {
+                                cap = file_size as usize;
+                            }
+                            let mut writer = io::BufWriter::with_capacity(cap, f);
                             let mut buf = [0; 1024 * 1024];
                             loop {
                                 // control
