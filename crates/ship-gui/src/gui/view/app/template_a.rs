@@ -9,7 +9,6 @@ use ship_internal::application::app::app_server::AppServer;
 use ship_internal::application::app::App;
 use ship_internal::application::update::update_manage::UpdateManager;
 use ship_internal::application::update::UpdateTaskStatus;
-use std::fs;
 use std::ops::RangeInclusive;
 use std::sync::{Arc, Mutex};
 
@@ -62,9 +61,7 @@ pub fn make_template_a_page(
                 let mut have_banner = false;
                 for x in &app_server.banners {
                     have_banner = true;
-                    let banner_image = Image::new(image::Handle::from_memory(
-                        fs::read(&x.image_path).unwrap_or_default(),
-                    ));
+                    let banner_image = Image::new(image::Handle::from_memory(x.image_data.clone()));
                     let image_btn = Button::new(banner_image)
                         .padding(0)
                         .on_press(Message::OpenImage(x.image_path.clone()));

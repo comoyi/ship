@@ -6,6 +6,8 @@ pub struct Banner {
     pub description: String,
     #[serde(skip)]
     pub image_path: String,
+    #[serde(skip)]
+    pub image_data: Vec<u8>,
 }
 
 impl Banner {
@@ -14,6 +16,7 @@ impl Banner {
             image_url: url.to_string(),
             description: description.to_string(),
             image_path: "".to_string(),
+            image_data: Default::default(),
         }
     }
 }

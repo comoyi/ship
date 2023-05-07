@@ -142,9 +142,11 @@ pub fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
                     let mut banners = vec![];
                     for x in banner_vo.banners {
                         let mut banner = Banner::new(&x.image_url, &x.description);
-                        banner.image_path =
-                            get_local_image_path(&x.image_url, app_server_id, app_id)
-                                .unwrap_or("".to_string());
+                        let image_path = get_local_image_path(&x.image_url, app_server_id, app_id)
+                            .unwrap_or("".to_string());
+                        banner.image_path = image_path.clone();
+                        let image_data = fs::read(&image_path).unwrap_or_default();
+                        banner.image_data = image_data;
                         banners.push(banner);
                     }
                     set_banner(app_server_id, app_id, banners, Arc::clone(&app_manager));
