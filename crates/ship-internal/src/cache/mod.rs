@@ -73,10 +73,23 @@ fn save_cache_file<P: AsRef<Path>, Q: AsRef<Path>>(
     //     return CacheError::SaveCacheFileFailed;
     // })?;
 
+    let max_capacity = 1024 * 1024;
+
     let rf = fs::File::open(&src_path).map_err(|_| CacheError::SaveCacheFileFailed)?;
-    let mut br = io::BufReader::with_capacity(1024 * 1024, rf);
+
+    let capacity = rf
+        .metadata()
+        .and_then(|x| {
+            if x.len() < max_capacity {
+                return Ok(x.len());
+            }
+            return Ok(max_capacity);
+        })
+        .unwrap_or(max_capacity);
+
+    let mut br = io::BufReader::with_capacity(capacity as usize, rf);
     let wf = fs::File::create(&dst_path).map_err(|_| CacheError::SaveCacheFileFailed)?;
-    let mut bw = io::BufWriter::with_capacity(1024 * 1024, wf);
+    let mut bw = io::BufWriter::with_capacity(capacity as usize, wf);
     io::copy(&mut br, &mut bw).map_err(|e| {
         warn!("save cache file failed, err: {}", e);
         return CacheError::SaveCacheFileFailed;

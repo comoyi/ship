@@ -16,7 +16,7 @@ pub fn md5_file_cancelable<P: AsRef<Path>>(
     is_cancel: Arc<AtomicBool>,
 ) -> Result<String, io::Error> {
     let f = File::open(path)?;
-    let default_capacity = 512 * 1024;
+    let default_capacity = 64 * 1024;
     let capacity = f
         .metadata()
         .and_then(|x| {
@@ -27,7 +27,7 @@ pub fn md5_file_cancelable<P: AsRef<Path>>(
         })
         .unwrap_or(default_capacity);
     let mut reader = io::BufReader::with_capacity(capacity as usize, f);
-    let mut buf = [0; 512 * 1024];
+    let mut buf = [0; 256 * 1024];
     let mut file_data: Vec<u8> = vec![];
     loop {
         if is_cancel.load(Ordering::Relaxed) {
