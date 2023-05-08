@@ -207,6 +207,7 @@ pub fn generate_cache_db() -> Result<(), CacheError> {
     info!("start generate cache db");
     let mut cache_info = CacheInfo::default();
     let p = get_update_cache_dir_path()?;
+    fs::create_dir_all(&p).map_err(|_| CacheError::CreateCacheDirFailed)?;
     let is_cancel = Arc::new(AtomicBool::new(false));
     let cfi = scan::scan(&p, is_cancel).map_err(|_| CacheError::ScanCacheFailed)?;
     for x in cfi.files {

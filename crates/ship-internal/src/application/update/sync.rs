@@ -239,7 +239,7 @@ fn delete_file(full_file_path: &PathBuf) -> Result<(), SyncError> {
                         // symlink is special!
                     } else if full_file_path.is_dir() {
                         warn!("[DEL][Dir]{:?}", full_file_path);
-                        let r = fs::remove_dir(&full_file_path);
+                        let r = fs::remove_dir_all(&full_file_path);
                         if let Err(e) = r {
                             warn!("[DEL][Dir][Failed]{:?}, err: {}", full_file_path, e);
                             return Err(SyncError::DeleteFailed);
