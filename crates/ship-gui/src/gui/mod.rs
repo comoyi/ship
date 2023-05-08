@@ -129,6 +129,8 @@ pub enum Message {
 
     SelfUpdate,
     SelfUpdateRestart,
+
+    ReGenerateCacheDb,
 }
 
 #[derive(Default)]

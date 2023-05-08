@@ -3,7 +3,7 @@ use iced::Command;
 use internationalization::DICTIONARY;
 use ship_internal::application::app::{app_manage, app_server};
 use ship_internal::application::update;
-use ship_internal::version;
+use ship_internal::{cache, version};
 use std::process;
 use std::sync::Arc;
 
@@ -77,6 +77,10 @@ impl Gui {
             }
             Message::SelfUpdateRestart => {
                 version::update::restart(Arc::clone(&self.version_manager));
+            }
+            Message::ReGenerateCacheDb => {
+                // TODO
+                cache::generate_cache_db().unwrap();
             }
         }
         Command::none()

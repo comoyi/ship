@@ -1,5 +1,6 @@
 pub mod application;
-mod cache;
+pub use application::scan;
+pub mod cache;
 mod config;
 mod log;
 mod request;

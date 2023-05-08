@@ -1,8 +1,11 @@
-use log::{debug, warn};
+use crate::scan;
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
+use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 use std::{fs, io, time};
 use util::filepath;
@@ -20,6 +23,8 @@ pub enum CacheError {
     CalcHashFailed,
     GetCacheInfoFailed,
     ConvertPathToStrFailed,
+
+    ScanCacheFailed,
 }
 
 pub fn get_cache_file(hash_sum: &str) -> Option<CacheFile> {
@@ -188,4 +193,37 @@ fn get_cache_db_file() -> Result<String, CacheError> {
     Ok(p.to_str()
         .ok_or(CacheError::ConvertPathToStrFailed)?
         .to_string())
+}
+
+fn is_regenerate_cache_db() -> Result<bool, CacheError> {
+    let p = get_cache_db_file()?;
+    if !Path::new(&p).exists() {
+        return Ok(true);
+    }
+    Ok(false)
+}
+
+pub fn generate_cache_db() -> Result<(), CacheError> {
+    info!("start generate cache db");
+    let mut cache_info = CacheInfo::default();
+    let p = get_update_cache_dir_path()?;
+    let is_cancel = Arc::new(AtomicBool::new(false));
+    let cfi = scan::scan(&p, is_cancel).map_err(|_| CacheError::ScanCacheFailed)?;
+    for x in cfi.files {
+        let hash_sum = x.hash;
+        if !hash_sum.is_empty() {
+            cache_info
+                .files
+                .insert(hash_sum.clone(), CacheFile::new(x.relative_path, &hash_sum));
+        }
+    }
+    save_cache_info(cache_info)?;
+    Ok(())
+}
+
+pub fn try_generate_cache_db() -> Result<(), CacheError> {
+    if is_regenerate_cache_db().unwrap_or(false) {
+        generate_cache_db()?;
+    }
+    Ok(())
 }

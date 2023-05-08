@@ -14,6 +14,7 @@ cancel_update: Cancel Update
 introduction: Introduction
 welcome: Welcome
 data_dir: Data Dir
+regenerate_cache_db: Regenerate Cache DB
 app_server_list_head: Servers
 announcement: Announcement
 self_update_updating: Updating

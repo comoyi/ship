@@ -14,6 +14,7 @@ cancel_update: 更新をキャンセル
 introduction: 序文
 welcome: 歓迎
 data_dir: データフォルダ
+regenerate_cache_db: キャッシュ データベースを再構築する
 app_server_list_head: サーバーリスト
 announcement: 発表
 self_update_updating: 更新中

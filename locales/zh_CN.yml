@@ -14,6 +14,7 @@ cancel_update: 取消更新
 introduction: 简介
 welcome: 欢迎
 data_dir: 数据文件夹
+regenerate_cache_db: 重建缓存数据库
 app_server_list_head: 服务器列表
 announcement: 公告
 self_update_updating: 正在更新

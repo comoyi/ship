@@ -34,6 +34,17 @@ pub fn make_settings_page(
     let card = Card::new(Text::new(""), data_dir_c);
     let mut c = Column::new();
     c = c.push(card);
+    c = c.push(make_cache_settings());
+
+    Container::new(c).padding(DEFAULT_PADDING)
+}
+pub fn make_cache_settings() -> Container<'static, Message> {
+    let mut c = Column::new();
+
+    let btn = Button::new(t!("regenerate_cache_db")).on_press(Message::ReGenerateCacheDb);
+    let regenerate_c = Row::new().push(btn);
+    let card = Card::new(Text::new(""), regenerate_c);
+    c = c.push(card);
 
     Container::new(c).padding(DEFAULT_PADDING)
 }
