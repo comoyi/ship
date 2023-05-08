@@ -39,7 +39,7 @@ pub fn do_launch(
         Some(x) => x,
     };
 
-    debug!("app: {:?}", app);
+    // debug!("app: {:?}", app);
     let launch = app.launch.clone();
     drop(app_manager_g);
     debug!("launch: {:?}", launch);

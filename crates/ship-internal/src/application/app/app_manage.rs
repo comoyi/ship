@@ -234,7 +234,7 @@ fn get_local_image_path(
 
     // TODO this is tmp fix, windows cant open image without extension
     #[cfg(windows)]
-    let file_name = md5::md5_string(url) + ".jpg";
+    let file_name = md5::md5_string(url) + ".webp";
 
     let full_file_path = banner_base_path.join(file_name);
 
