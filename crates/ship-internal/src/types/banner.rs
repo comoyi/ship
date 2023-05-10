@@ -7,7 +7,7 @@ pub struct Banner {
     #[serde(skip)]
     pub image_path: String,
     #[serde(skip)]
-    pub image_data: Vec<u8>,
+    pub image_data: image::RgbaImage,
 }
 
 impl Banner {

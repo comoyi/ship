@@ -61,7 +61,11 @@ pub fn make_template_a_page(
                 let mut have_banner = false;
                 for x in &app_server.banners {
                     have_banner = true;
-                    let banner_image = Image::new(image::Handle::from_memory(x.image_data.clone()));
+                    let banner_image = Image::new(image::Handle::from_pixels(
+                        x.image_data.width(),
+                        x.image_data.height(),
+                        x.image_data.to_vec(),
+                    ));
                     let image_btn = Button::new(banner_image)
                         .padding(0)
                         .on_press(Message::OpenImage(x.image_path.clone()));

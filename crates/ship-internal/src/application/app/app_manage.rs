@@ -3,8 +3,9 @@ use crate::application::app::{App, AppManager, Apps};
 use crate::request;
 use crate::request::app_server::announcement::AnnouncementVo;
 use crate::types::banner::Banner;
+use image::ImageFormat;
 use log::warn;
-use std::io::{Read, Write};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -144,13 +145,34 @@ pub fn refresh_banner(app_manager: Arc<Mutex<AppManager>>) {
             match banner_r {
                 Ok(banner_vo) => {
                     let mut banners = vec![];
+                    let max = 10;
+                    let mut count = 0;
                     for x in banner_vo.banners {
+                        count += 1;
+                        if count > max {
+                            break;
+                        }
                         let mut banner = Banner::new(&x.image_url, &x.description);
                         let image_path = get_local_image_path(&x.image_url, app_server_id, app_id)
                             .unwrap_or("".to_string());
                         banner.image_path = image_path.clone();
-                        let image_data = fs::read(&image_path).unwrap_or_default();
-                        banner.image_data = image_data;
+                        if let Ok(mut f) = fs::File::open(&image_path) {
+                            let img = image::load(io::BufReader::new(&f), ImageFormat::WebP)
+                                .or_else(|_| {
+                                    f.seek(SeekFrom::Start(0))?;
+                                    image::load(io::BufReader::new(&f), ImageFormat::Png)
+                                })
+                                .or_else(|_| {
+                                    f.seek(SeekFrom::Start(0))?;
+                                    image::load(io::BufReader::new(&f), ImageFormat::Jpeg)
+                                });
+                            if img.is_err() {
+                                continue;
+                            }
+                            let image_data = img.unwrap_or_default().thumbnail(360, 360).to_rgba8();
+                            banner.image_data = image_data;
+                        }
+
                         banners.push(banner);
                     }
                     set_banner(app_server_id, app_id, banners, Arc::clone(&app_manager));
