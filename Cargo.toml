@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/ship", "crates/ship-internal", "crates/ship-gui", "crates/util", "crates/internationalization"]
+resolver = "2"
