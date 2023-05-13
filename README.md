@@ -10,7 +10,7 @@
 A general-purpose program launcher with sync
 
 
-<img src="./assets/images/preview.png" style="border: 1px solid lightgrey;border-top-left-radius: 6px;border-top-right-radius: 6px;">
+<img src="./assets/images/preview.png">
 
 This is client
 
