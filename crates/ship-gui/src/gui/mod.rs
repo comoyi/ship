@@ -111,6 +111,7 @@ impl SubscriptionEvent {
 pub enum Message {
     NoOp,
     Exit,
+
     OpenAboutModal,
     CloseAboutModal,
     GoToPage(PageRoute),
