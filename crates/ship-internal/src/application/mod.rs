@@ -19,7 +19,7 @@ use std::sync::{Arc, Mutex};
 use std::{env, fs};
 use util::filepath;
 
-pub const APP_NAME: &str = "Launcher";
+pub const APP_NAME: &str = "Ship";
 
 #[derive(Default)]
 pub struct App {
