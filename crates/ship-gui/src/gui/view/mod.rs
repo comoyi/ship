@@ -1,3 +1,4 @@
+mod about;
 mod app;
 mod home;
 pub mod navbar;
@@ -9,11 +10,8 @@ use crate::gui::view::home::make_home_page;
 use crate::gui::view::navbar::{make_nav_bar, PageRoute};
 use crate::gui::view::settings::make_settings_page;
 use crate::gui::{Gui, Message};
-use iced::widget::{Column, Container, Text};
+use iced::widget::{Column, Container};
 use iced::Padding;
-use iced_aw::{Card, Modal};
-use internationalization::t;
-use ship_internal::{application, version as app_version};
 use std::sync::Arc;
 
 const DEFAULT_PADDING: Padding = Padding::new(10.0);
@@ -25,21 +23,10 @@ pub fn make_view(s: &Gui) -> Container<'static, Message> {
     let page = make_nav_bar(current_route);
     c = c.push(page);
 
-    let about_modal = Modal::new(s.show_about_modal, "", || {
-        Card::new(
-            Text::new(t!("about")),
-            Text::new(format!(
-                "{}\n\nVersion {}\n\nCopyright © 2023 清新池塘",
-                application::APP_NAME,
-                app_version::VERSION_TEXT
-            )),
-        )
-        .max_width(300.0)
-        .into()
-    })
-    .backdrop(Message::CloseAboutModal)
-    .on_esc(Message::CloseAboutModal);
-    c = c.push(about_modal);
+    if s.show_about_modal {
+        let about_modal = about::make_about_content();
+        c = c.push(about_modal);
+    }
 
     let version_modal = version::make_version_update_content(Arc::clone(&s.version_manager));
     c = c.push(version_modal);

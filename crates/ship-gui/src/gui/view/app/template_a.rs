@@ -140,7 +140,7 @@ pub fn make_template_a_page(
 
                 let mut app_server_info_c = Row::new()
                     .spacing(DEFAULT_SPACING)
-                    .height(380)
+                    .height(370)
                     .push(announcement_panel);
                 if have_banner {
                     app_server_info_c = app_server_info_c.push(banner_c);
