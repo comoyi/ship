@@ -10,10 +10,10 @@
 A general-purpose program launcher with sync
 
 
-![app image](./assets/images/preview.png)
+<img src="./assets/images/preview.png">
 
 This is client
 
-[client](https://github.com/comoyi/ship)
+[Client](https://github.com/comoyi/ship)
 
-[server](https://github.com/comoyi/seaport)
+[Server](https://github.com/comoyi/seaport)
