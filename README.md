@@ -14,6 +14,6 @@ A general-purpose program launcher with sync
 
 This is client
 
-[client](https://github.com/comoyi/ship)
+[Client](https://github.com/comoyi/ship)
 
-[server](https://github.com/comoyi/seaport)
+[Server](https://github.com/comoyi/seaport)
