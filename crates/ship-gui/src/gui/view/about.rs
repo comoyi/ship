@@ -9,11 +9,12 @@ pub fn make_about_content() -> Container<'static, Message> {
     let about_modal = Modal::new(true, "", || {
         let mut content_c = Column::new()
             .width(Length::Fill)
-            .align_items(Alignment::Center);
+            .align_items(Alignment::Center)
+            .spacing(10);
 
         let logo =
             image::Handle::from_memory(include_bytes!("../../../../../assets/images/logo.png"));
-        let logo_image = Image::new(logo).height(64);
+        let logo_image = Image::new(logo).height(128);
         content_c = content_c.push(logo_image);
 
         let mut info = Column::new().align_items(Alignment::Center).spacing(10);
@@ -23,9 +24,7 @@ pub fn make_about_content() -> Container<'static, Message> {
         info = info.push(Text::new(format!("Copyright © 2023 清新池塘",)));
         content_c = content_c.push(info);
 
-        Card::new(Text::new(t!("about")), content_c)
-            .max_width(300.0)
-            .into()
+        Card::new(Text::new(" "), content_c).max_width(300.0).into()
     })
     .backdrop(Message::CloseAboutModal)
     .on_esc(Message::CloseAboutModal);

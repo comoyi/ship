@@ -17,7 +17,7 @@ use std::time::Duration;
 
 pub fn start(flags: GuiFlags) {
     let icon = Some(
-        icon::from_file_data(include_bytes!("../../../../assets/images/icon.png"), None).unwrap(),
+        icon::from_file_data(include_bytes!("../../../../assets/images/icon-s.png"), None).unwrap(),
     );
     let _ = Gui::run(Settings {
         window: window::Settings {

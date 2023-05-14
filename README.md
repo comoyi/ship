@@ -17,3 +17,9 @@ This is client
 [Client](https://github.com/comoyi/ship)
 
 [Server](https://github.com/comoyi/seaport)
+
+<div align="center">
+
+<img src="./assets/images/s.svg" width="256">
+
+</div>

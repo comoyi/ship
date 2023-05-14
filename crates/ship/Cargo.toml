@@ -9,3 +9,6 @@ edition = "2021"
 [dependencies]
 ship-internal = { path = "../ship-internal" }
 ship-gui = { path = "../ship-gui" }
+
+[build-dependencies]
+embed-resource = "2.1.1"
