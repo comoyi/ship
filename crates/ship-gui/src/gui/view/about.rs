@@ -2,7 +2,6 @@ use crate::gui::Message;
 use iced::widget::{image, Column, Container, Image, Text};
 use iced::{Alignment, Length};
 use iced_aw::{Card, Modal};
-use internationalization::t;
 use ship_internal::{application, version};
 
 pub fn make_about_content() -> Container<'static, Message> {
