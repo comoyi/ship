@@ -72,14 +72,22 @@ pub fn update_new_version(version_manager: Arc<Mutex<VersionManager>>) {
 
         let r = do_update_new_version(tx.clone());
         if let Err(e) = r {
-            warn!("update new version failed, err: {:?}", e);
-            let mut version_manager_g = version_manager.lock().unwrap();
-            version_manager_g.is_updating = false;
-            drop(version_manager_g);
+            match e {
+                // ignore this error
+                Error::RemoveLegacyFileFailed => {
+                    warn!("remove legacy file failed");
+                }
+                _ => {
+                    warn!("update new version failed, err: {:?}", e);
+                    let mut version_manager_g = version_manager.lock().unwrap();
+                    version_manager_g.is_updating = false;
+                    drop(version_manager_g);
 
-            let _ = tx.send(UpdateStatus::Failed);
-            drop(tx);
-            return;
+                    let _ = tx.send(UpdateStatus::Failed);
+                    drop(tx);
+                    return;
+                }
+            }
         }
         info!("update new version finished");
         let _ = tx.send(UpdateStatus::Finished);
@@ -130,6 +138,7 @@ fn do_update_new_version(tx: Sender<UpdateStatus>) -> Result<(), Error> {
 
     Ok(())
 }
+
 fn do_download<P: AsRef<Path>>(
     download_url: &str,
     file_path: P,
